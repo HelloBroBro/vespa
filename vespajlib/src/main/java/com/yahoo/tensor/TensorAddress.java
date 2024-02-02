@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
+import com.yahoo.tensor.impl.Convert;
 import com.yahoo.tensor.impl.Label;
 import com.yahoo.tensor.impl.TensorAddressAny;
 
@@ -32,9 +33,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         return TensorAddressAny.of(labels);
     }
 
-    /**
-     * Returns the number of labels in this
-     */
+    /** Returns the number of labels in this */
     public abstract int size();
 
     /**
@@ -69,10 +68,10 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("cell address (");
-        int sz = size();
-        if (sz > 0) {
+        int size = size();
+        if (size > 0) {
             sb.append(label(0));
-            for (int i = 1; i < sz; i++) {
+            for (int i = 1; i < size; i++) {
                 sb.append(',').append(label(i));
             }
         }
@@ -104,7 +103,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         return "'" + label + "'";
     }
 
-    /** Returns an address with only some of the dimension */
+    /** Returns an address with only some of the dimension. Ordering will also be according to indexMap */
     public TensorAddress partialCopy(int[] indexMap) {
         int[] labels = new int[indexMap.length];
         for (int i = 0; i < labels.length; ++i) {
@@ -113,9 +112,9 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         return TensorAddressAny.ofUnsafe(labels);
     }
 
-    /** Creates a complete address by taking the sparse dimmensions from this and the indexed from the densePart */
-    public TensorAddress fullAddressOf(List<TensorType.Dimension> dimensions, int [] densePart) {
-        int [] labels = new int[dimensions.size()];
+    /** Creates a complete address by taking the mapped dimmensions from this and the indexed from the indexedPart */
+    public TensorAddress fullAddressOf(List<TensorType.Dimension> dimensions, int[] densePart) {
+        int[] labels = new int[dimensions.size()];
         int mappedIndex = 0;
         int indexedIndex = 0;
         for (int i = 0; i < labels.length; i++) {
@@ -131,11 +130,17 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         return TensorAddressAny.ofUnsafe(labels);
     }
 
-    /** Extracts the sparse(non-indexed) dimensions of the address */
-    public  TensorAddress sparsePartialAddress(TensorType sparseType, List<TensorType.Dimension> dimensions) {
+    /**
+     * Returns an address containing the mapped dimensions of this.
+     *
+     * @param mappedType the type of the mapped subset of the type this is an address of;
+     *                   which is also the type of the returned address
+     * @param dimensions all the dimensions of the type this is an address of
+     */
+    public TensorAddress mappedPartialAddress(TensorType mappedType, List<TensorType.Dimension> dimensions) {
         if (dimensions.size() != size())
             throw new IllegalArgumentException("Tensor type of " + this + " is not the same size as " + this);
-        TensorAddress.Builder builder = new TensorAddress.Builder(sparseType);
+        TensorAddress.Builder builder = new TensorAddress.Builder(mappedType);
         for (int i = 0; i < dimensions.size(); ++i) {
             TensorType.Dimension dimension = dimensions.get(i);
             if ( ! dimension.isIndexed())
@@ -150,9 +155,9 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         final TensorType type;
         final int[] labels;
 
-        private static int [] createEmptyLabels(int size) {
-            int [] labels = new int[size];
-            Arrays.fill(labels, Tensor.INVALID_INDEX);
+        private static int[] createEmptyLabels(int size) {
+            int[] labels = new int[size];
+            Arrays.fill(labels, Tensor.invalidIndex);
             return labels;
         }
 
@@ -174,7 +179,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             var mappedSubtype = type.mappedSubtype();
             if (mappedSubtype.rank() != 1)
                 throw new IllegalArgumentException("Cannot add a label without explicit dimension to a tensor of type " +
-                                                   type + ": Must have exactly one sparse dimension");
+                                                   type + ": Must have exactly one mapped dimension");
             add(mappedSubtype.dimensions().get(0).name(), label);
             return this;
         }
@@ -192,6 +197,10 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
             labels[labelIndex] = Label.toNumber(label);
             return this;
+        }
+
+        public Builder add(String dimension, long label) {
+            return add(dimension, Convert.safe2Int(label));
         }
         public Builder add(String dimension, int label) {
             Objects.requireNonNull(dimension, "dimension cannot be null");
@@ -212,7 +221,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         void validate() {
             for (int i = 0; i < labels.length; i++)
-                if (labels[i] == Tensor.INVALID_INDEX)
+                if (labels[i] == Tensor.invalidIndex)
                     throw new IllegalArgumentException("Missing a label for dimension '" +
                                                        type.dimensions().get(i).name() + "' for " + type);
         }
