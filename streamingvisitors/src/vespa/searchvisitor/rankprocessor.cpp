@@ -53,11 +53,6 @@ getFeature(const RankProgram &rankProgram) {
     return resolver.resolve(0);
 }
 
-uint16_t
-cap_16_bits(uint32_t value) {
-    return std::min(value, static_cast<uint32_t>(std::numeric_limits<uint16_t>::max()));
-}
-
 }
 
 void
@@ -120,7 +115,7 @@ RankProcessor::initHitCollector(size_t wantedHitCount)
 void
 RankProcessor::setupRankProgram(RankProgram &program)
 {
-    program.setup(*_match_data, _queryEnv, search::fef::Properties());
+    program.setup(*_match_data, _queryEnv, _featureOverrides);
 }
 
 void
@@ -153,13 +148,15 @@ RankProcessor::RankProcessor(std::shared_ptr<const RankManager::Snapshot> snapsh
                              const vespalib::string &rankProfile,
                              Query & query,
                              const vespalib::string & location,
-                             Properties & queryProperties,
+                             const Properties & queryProperties,
+                             const Properties & featureOverrides,
                              const search::IAttributeManager * attrMgr) :
 
     _rankManagerSnapshot(std::move(snapshot)),
     _rankSetup(_rankManagerSnapshot->getRankSetup(rankProfile)),
     _query(query),
     _queryEnv(location, _rankManagerSnapshot->getIndexEnvironment(rankProfile), queryProperties, attrMgr),
+    _featureOverrides(featureOverrides),
     _mdLayout(),
     _match_data(),
     _rankProgram(),
@@ -261,90 +258,15 @@ void
 RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrapper& query)
 {
     for (QueryWrapper::Term & term: query.getTermList()) {
-        auto nn_node = term.getTerm()->as_nearest_neighbor_query_node();
-        if (nn_node != nullptr) {
-            auto raw_score = nn_node->get_raw_score();
-            if (raw_score.has_value()) {
-                auto& qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());
-                auto& td = qtd.getTermData();
-                if (td.numFields() == 1u) {
-                    auto tfd = td.field(0u);
-                    auto tmd = matchData.resolveTermField(tfd.getHandle());
-                    assert(tmd != nullptr);
-                    tmd->setRawScore(docid, raw_score.value());
-                }
-            }
-        } else if (auto multi_term = term.getTerm()->as_multi_term()) {
-            auto& qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());
-            auto& td = qtd.getTermData();
-            multi_term->unpack_match_data(docid, td, matchData);
-        } else if (!term.isPhraseTerm() || term.isFirstPhraseTerm()) { // consider 1 term data per phrase
+        if (!term.isPhraseTerm() || term.isFirstPhraseTerm()) { // consider 1 term data per phrase
             bool isPhrase = term.isFirstPhraseTerm();
             QueryTermData & qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());
             const ITermData &td = qtd.getTermData();
 
-            HitList list;
-            const HitList & hitList = isPhrase
-                                      ? term.getParent()->evaluateHits(list)
-                                      : term.getTerm()->evaluateHits(list);
-
-            if (hitList.size() > 0) { // only unpack if we have a hit
-                LOG(debug, "Unpack match data for query term '%s:%s' (%s)",
-                    term.getTerm()->index().c_str(), term.getTerm()->getTerm(), isPhrase ? "phrase" : "term");
-
-                uint32_t lastFieldId = -1;
-                TermFieldMatchData *tmd = nullptr;
-                uint32_t fieldLen = search::fef::FieldPositionsIterator::UNKNOWN_LENGTH;
-                uint32_t num_occs = 0;
-
-                // optimize for hitlist giving all hits for a single field in one chunk
-                for (const Hit & hit : hitList) {
-                    uint32_t fieldId = hit.field_id();
-                    if (fieldId != lastFieldId) {
-                        // reset to notfound/unknown values
-                        tmd = nullptr;
-                        fieldLen = search::fef::FieldPositionsIterator::UNKNOWN_LENGTH;
-                        num_occs = 0;
-
-                        // setup for new field that had a hit
-                        const ITermFieldData *tfd = td.lookupField(fieldId);
-                        if (tfd != nullptr) {
-                            tmd = matchData.resolveTermField(tfd->getHandle());
-                            tmd->setFieldId(fieldId);
-                            // reset field match data, but only once per docId
-                            if (tmd->getDocId() != docid) {
-                                tmd->reset(docid);
-                            }
-                        }
-                        // find fieldLen for new field
-                        if (isPhrase) {
-                            if (fieldId < term.getParent()->getFieldInfoSize()) {
-                                auto& field_info = term.getParent()->getFieldInfo(fieldId);
-                                fieldLen = field_info.getFieldLength();
-                                num_occs = field_info.getHitCount();
-                            }
-                        } else {
-                            if (fieldId < term.getTerm()->getFieldInfoSize()) {
-                                auto& field_info = term.getTerm()->getFieldInfo(fieldId);
-                                fieldLen = field_info.getFieldLength();
-                                num_occs = field_info.getHitCount();
-                            }
-                        }
-                        lastFieldId = fieldId;
-                    }
-                    if (tmd != nullptr) {
-                        // adjust so that the position for phrase terms equals the match for the first term
-                        TermFieldMatchDataPosition pos(hit.element_id(), hit.position() - term.getPosAdjust(),
-                                                       hit.element_weight(), hit.element_length());
-                        tmd->appendPosition(pos);
-                        LOG(debug, "Append elemId(%u),position(%u), weight(%d), tfmd.weight(%d)",
-                                   pos.getElementId(), pos.getPosition(), pos.getElementWeight(), tmd->getWeight());
-                        if (tmd->needs_interleaved_features()) {
-                            tmd->setFieldLength(cap_16_bits(fieldLen));
-                            tmd->setNumOccs(cap_16_bits(num_occs));
-                        }
-                    }
-                }
+            if (isPhrase) {
+                term.getParent()->unpack_match_data(docid, td, matchData);
+            } else {
+                term.getTerm()->unpack_match_data(docid, td, matchData);
             }
         }
     }

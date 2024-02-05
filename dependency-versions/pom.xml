@@ -65,7 +65,7 @@
         <assertj.vespa.version>3.25.2</assertj.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <aws-sdk.vespa.version>1.12.650</aws-sdk.vespa.version>
+        <aws-sdk.vespa.version>1.12.651</aws-sdk.vespa.version>
         <athenz.vespa.version>1.11.51</athenz.vespa.version>
         <!-- Athenz END -->
 
@@ -110,8 +110,8 @@
         <jimfs.vespa.version>1.3.0</jimfs.vespa.version>
         <jna.vespa.version>5.14.0</jna.vespa.version>
         <joda-time.vespa.version>2.12.6</joda-time.vespa.version>
-        <junit.vespa.version>5.10.1</junit.vespa.version>
-        <junit.platform.vespa.version>1.10.1</junit.platform.vespa.version>
+        <junit.vespa.version>5.10.2</junit.vespa.version>
+        <junit.platform.vespa.version>1.10.2</junit.platform.vespa.version>
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
         <luben.zstd.vespa.version>1.5.5-11</luben.zstd.vespa.version>
         <lucene.vespa.version>9.9.2</lucene.vespa.version>
@@ -123,7 +123,7 @@
         <netty.vespa.version>4.1.106.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.62.Final</netty-tcnative.vespa.version>
         <onnxruntime.vespa.version>1.16.3</onnxruntime.vespa.version>
-        <opennlp.vespa.version>2.3.1</opennlp.vespa.version>
+        <opennlp.vespa.version>2.3.2</opennlp.vespa.version>
         <opentest4j.vespa.version>1.3.0</opentest4j.vespa.version>
         <org.json.vespa.version>20231013</org.json.vespa.version>
         <org.lz4.vespa.version>1.8.0</org.lz4.vespa.version>

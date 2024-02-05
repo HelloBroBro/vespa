@@ -112,7 +112,6 @@ public class StorageClusterTest {
         StorServerConfig config = new StorServerConfig(builder);
         assertEquals(16, config.max_merges_per_node());
         assertEquals(100, config.max_merge_queue_size());
-        assertTrue(config.disable_queue_limits_for_chained_merges());
     }
 
     @Test
@@ -232,7 +231,6 @@ public class StorageClusterTest {
             var config = filestorConfigFromProducer(stc);
 
             assertEquals(7, config.num_threads());
-            assertFalse(config.enable_multibit_split_optimalization());
             assertEquals(2, config.num_response_threads());
         }
         {
@@ -276,7 +274,6 @@ public class StorageClusterTest {
             var config = filestorConfigFromProducer(stc);
 
             assertEquals(4, config.num_threads());
-            assertFalse(config.enable_multibit_split_optimalization());
         }
         {
             assertEquals(1, stc.getChildren().size());
@@ -337,7 +334,6 @@ public class StorageClusterTest {
         assertEquals(20, config.async_operation_throttler().min_window_size());
         assertEquals(-1, config.async_operation_throttler().max_window_size()); // <=0 implies +inf
         assertEquals(3.0, config.async_operation_throttler().resize_rate(), 0.0001);
-        assertTrue(config.async_operation_throttler().throttle_individual_merge_feed_ops());
     }
 
     @Test

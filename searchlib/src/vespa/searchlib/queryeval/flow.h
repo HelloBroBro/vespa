@@ -10,6 +10,14 @@
 
 namespace search::queryeval {
 
+struct FlowStats {
+    double estimate;
+    double cost;
+    double strict_cost;
+    constexpr FlowStats(double estimate_in, double cost_in, double strict_cost_in) noexcept
+      : estimate(estimate_in), cost(cost_in), strict_cost(strict_cost_in) {}
+};
+
 namespace flow {
 
 // the default adapter expects the shape of std::unique_ptr<Blueprint>
@@ -56,16 +64,6 @@ struct MinOrCost {
     MinOrCost(ADAPTER adapter_in) noexcept : adapter(adapter_in) {}
     bool operator () (const auto &a, const auto &b) const noexcept {
         return adapter.estimate(a) * adapter.cost(b) > adapter.estimate(b) * adapter.cost(a);
-    }
-};
-
-template <typename ADAPTER>
-struct MinOrStrictCost {
-    // sort children to minimize total cost of strict OR flow
-    [[no_unique_address]] ADAPTER adapter;
-    MinOrStrictCost(ADAPTER adapter_in) noexcept : adapter(adapter_in) {}
-    bool operator () (const auto &a, const auto &b) const noexcept {
-        return adapter.estimate(a) * adapter.strict_cost(b) > adapter.estimate(b) * adapter.strict_cost(a);
     }
 };
 
@@ -187,18 +185,19 @@ public:
 
 class OrFlow : public FlowMixin<OrFlow>{
 private:
+    double _full;
     double _flow;
     bool _strict;
     bool _first;
 public:
     OrFlow(double in, bool strict) noexcept
-      : _flow(in), _strict(strict), _first(true) {}
+      : _full(in), _flow(in), _strict(strict), _first(true) {}
     void add(double est) noexcept {
         _flow *= (1.0 - est);
         _first = false;
     }
     double flow() const noexcept {
-        return _flow;
+        return _strict ? _full : _flow;
     }
     bool strict() const noexcept {
         return _strict;
@@ -207,9 +206,7 @@ public:
         return _first ? 0.0 : (1.0 - _flow);
     }
     static void sort(auto adapter, auto &children, bool strict) {
-        if (strict) {
-            flow::sort<flow::MinOrStrictCost>(adapter, children);
-        } else {
+        if (!strict) {
             flow::sort<flow::MinOrCost>(adapter, children);
         }
     }
