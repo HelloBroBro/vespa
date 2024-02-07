@@ -21,7 +21,6 @@ namespace search::streaming {
 
 namespace {
 
-vespalib::stringref DEFAULT("default");
 bool disableRewrite(const QueryNode * qn) {
     return dynamic_cast<const NearQueryNode *> (qn) ||
            dynamic_cast<const PhraseQueryNode *> (qn) ||
@@ -84,7 +83,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_GEO_LOCATION_TERM:
         // just keep the string representation here; parsed in vsm::GeoPosFieldSearcher
         qn = std::make_unique<QueryTerm>(factory.create(), queryRep.getTerm(), queryRep.getIndexName(),
-                                         QueryTerm::Type::GEO_LOCATION, Normalizing::NONE);
+                                         TermType::GEO_LOCATION, Normalizing::NONE);
         break;
     case ParseItem::ITEM_NEAREST_NEIGHBOR:
         qn = build_nearest_neighbor_query_node(factory, queryRep);
@@ -105,36 +104,13 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             if ((type == ParseItem::ITEM_PURE_WEIGHTED_STRING) || (type == ParseItem::ITEM_PURE_WEIGHTED_LONG)) {
                 index = parent->getIndex();
             } else {
-                index = DEFAULT;
+                index = SimpleQueryStackDumpIterator::DEFAULT_INDEX;
             }
         }
         if (dynamic_cast<const SameElementQueryNode *>(parent) != nullptr) {
             index = parent->getIndex() + "." + index;
         }
-        using TermType = QueryTerm::Type;
-        TermType sTerm(TermType::WORD);
-        switch (type) {
-        case ParseItem::ITEM_REGEXP:
-            sTerm = TermType::REGEXP;
-            break;
-        case ParseItem::ITEM_PREFIXTERM:
-            sTerm = TermType::PREFIXTERM;
-            break;
-        case ParseItem::ITEM_SUBSTRINGTERM:
-            sTerm = TermType::SUBSTRINGTERM;
-            break;
-        case ParseItem::ITEM_EXACTSTRINGTERM:
-            sTerm = TermType::EXACTSTRINGTERM;
-            break;
-        case ParseItem::ITEM_SUFFIXTERM:
-            sTerm = TermType::SUFFIXTERM;
-            break;
-        case ParseItem::ITEM_FUZZY:
-            sTerm = TermType::FUZZYTERM;
-            break;
-        default:
-            break;
-        }
+        TermType sTerm = ParseItem::toTermType(type);
         QueryTerm::string ssTerm;
         if (type == ParseItem::ITEM_PURE_WEIGHTED_LONG) {
             char buf[24];
@@ -286,8 +262,14 @@ QueryNode::build_weighted_set_term(const QueryNodeResultFactory& factory, Simple
 std::unique_ptr<QueryNode>
 QueryNode::build_phrase_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
 {
-    auto phrase = std::make_unique<PhraseQueryNode>(factory.create(), queryRep.getIndexName(), queryRep.getArity());
+    vespalib::string index = queryRep.getIndexName();
+    if (index.empty()) {
+        index = SimpleQueryStackDumpIterator::DEFAULT_INDEX;
+    }
+    auto phrase = std::make_unique<PhraseQueryNode>(factory.create(), index, queryRep.getArity());
     auto arity = queryRep.getArity();
+    phrase->setWeight(queryRep.GetWeight());
+    phrase->setUniqueId(queryRep.getUniqueId());
     for (size_t i = 0; i < arity; ++i) {
         queryRep.next();
         auto qn = Build(phrase.get(), factory, queryRep, false);
