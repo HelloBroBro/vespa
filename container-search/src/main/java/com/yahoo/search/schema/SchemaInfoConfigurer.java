@@ -16,7 +16,7 @@ import java.util.List;
 class SchemaInfoConfigurer {
 
     static List<Schema> toSchemas(SchemaInfoConfig schemaInfoConfig) {
-        return schemaInfoConfig.schema().stream().map(config -> toSchema(config)).toList();
+        return schemaInfoConfig.schema().stream().map(SchemaInfoConfigurer::toSchema).toList();
     }
 
     static Schema toSchema(SchemaInfoConfig.Schema schemaInfoConfig) {
@@ -46,11 +46,11 @@ class SchemaInfoConfigurer {
 
     static List<Cluster> toClusters(QrSearchersConfig config) {
         List<Cluster> clusters = new ArrayList<>();
-        for (int i = 0; i < config.searchcluster().size(); ++i) {
-            String clusterName = config.searchcluster(i).name();
+        for (var searchCluster : config.searchcluster()) {
+            String clusterName = searchCluster.name();
             var clusterInfo = new Cluster.Builder(clusterName);
-            clusterInfo.setStreaming(config.searchcluster(i).indexingmode() == QrSearchersConfig.Searchcluster.Indexingmode.Enum.STREAMING);
-            for (var schemaDef : config.searchcluster(i).searchdef())
+            clusterInfo.setStreaming(searchCluster.indexingmode() == QrSearchersConfig.Searchcluster.Indexingmode.Enum.STREAMING);
+            for (var schemaDef : searchCluster.searchdef())
                 clusterInfo.addSchema(schemaDef);
             clusters.add(clusterInfo.build());
         }

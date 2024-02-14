@@ -131,8 +131,8 @@ private:
         search::fef::Properties        _queryProperties;
         search::fef::Properties        _featureOverrides;
         bool                           _hasRanking;
-        RankProcessor::UP              _rankProcessor;
         bool                           _dumpFeatures;
+        RankProcessor::UP              _rankProcessor;
         RankProcessor::UP              _dumpProcessor;
 
         /**
@@ -168,7 +168,7 @@ private:
          **/
         void setupRankProcessors(search::streaming::Query & query,
                                  const vespalib::string & location,
-                                 size_t wantedHitCount,
+                                 size_t wantedHitCount, bool use_sort_blob,
                                  const search::IAttributeManager & attrMan,
                                  std::vector<AttrInfo> & attributeFields);
         /**
@@ -198,12 +198,11 @@ private:
          * @param visitor the search visitor.
          * @param tmpSortBuffer the sort buffer containing the sort data.
          * @param document the document to collect. Must be kept alive on the outside.
-         * @return true if the document was added to the heap
          **/
-        bool collectMatchedDocument(bool hasSorting,
+        void collectMatchedDocument(bool hasSorting,
                                     SearchVisitor & visitor,
                                     const std::vector<char> & tmpSortBuffer,
-                                    const vsm::StorageDocument * document);
+                                    vsm::StorageDocument::SP document);
         /**
          * Callback function that is called when visiting is completed.
          * Perform second phase ranking and calculate summary features / rank features if asked for.
@@ -323,9 +322,8 @@ private:
     /**
      * Process one document
      * @param document Document to process.
-     * @return true if the underlying buffer is needed later on, then it must be kept.
      */
-    bool handleDocument(vsm::StorageDocument & document);
+    void handleDocument(vsm::StorageDocument::SP document);
 
     /**
      * Collect the given document for grouping.
@@ -397,7 +395,6 @@ private:
         size_t _limit;
     };
     using GroupingList = std::vector< GroupingEntry >;
-    using DocumentVector = std::vector<vsm::StorageDocument::UP>;
 
     class StreamingDocsumsState {
         using ResolveClassInfo = search::docsummary::IDocsumWriter::ResolveClassInfo;
@@ -485,7 +482,6 @@ private:
     bool                                    _shouldFillRankAttribute;
     SyntheticFieldsController               _syntheticFieldsController;
     RankController                          _rankController;
-    DocumentVector                          _backingDocuments;
     vsm::StringFieldIdTMapT                 _fieldsUnion;
 
     void setupAttributeVector(const vsm::FieldPath &fieldPath);
@@ -499,7 +495,7 @@ class SearchVisitorFactory : public storage::VisitorFactory {
     std::shared_ptr<storage::VisitorEnvironment> makeVisitorEnvironment(storage::StorageComponent&) override;
 
     storage::Visitor* makeVisitor(storage::StorageComponent&, storage::VisitorEnvironment&env,
-                         const vdslib::Parameters& params) override;
+                                  const vdslib::Parameters& params) override;
 public:
     explicit SearchVisitorFactory(const config::ConfigUri & configUri, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec);
     ~SearchVisitorFactory() override;
