@@ -56,12 +56,8 @@ public class SearchChainResolver {
             }
         };
 
-        public Builder addSearchChain(ComponentId searchChainId) {
-            return addSearchChain(searchChainId, Collections.<String>emptyList());
-        }
-
         public Builder addSearchChain(ComponentId searchChainId, FederationOptions federationOptions) {
-            return addSearchChain(searchChainId, federationOptions, Collections.<String>emptyList());
+            return addSearchChain(searchChainId, federationOptions, List.of());
         }
 
         public Builder addSearchChain(ComponentId searchChainId, List<String> documentTypes) {
