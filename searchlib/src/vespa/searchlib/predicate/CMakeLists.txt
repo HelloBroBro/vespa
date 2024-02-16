@@ -4,6 +4,7 @@ vespa_add_library(searchlib_predicate OBJECT
     document_features_store.cpp
     document_features_store_saver.cpp
     predicate_index.cpp
+    predicate_index_saver.cpp
     predicate_interval.cpp
     predicate_interval_store.cpp
     predicate_range_expander.cpp
@@ -11,6 +12,7 @@ vespa_add_library(searchlib_predicate OBJECT
     predicate_tree_annotator.cpp
     predicate_zero_constraint_posting_list.cpp
     simple_index.cpp
+    simple_index_saver.cpp
     common.cpp
     DEPENDS
 )

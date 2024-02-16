@@ -3,6 +3,8 @@
 #include "predicate_index.h"
 #include "document_features_store_saver.h"
 #include "predicate_hash.h"
+#include "predicate_index_saver.h"
+#include "simple_index_saver.h"
 #include <vespa/searchlib/util/data_buffer_writer.h>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/btree/btree.hpp>
@@ -10,7 +12,6 @@
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
-
 
 using vespalib::datastore::EntryRef;
 using vespalib::DataBuffer;
@@ -44,20 +45,20 @@ PredicateIndex::indexDocumentFeatures(uint32_t doc_id, const PredicateIndex::Fea
 namespace {
 constexpr double THRESHOLD_USE_BIT_VECTOR_CACHE = 0.1;
 
-// PostingSerializer that writes intervals from interval store based
-// on the EntryRef that is to be serialized.
+// PostingSaver that writes intervals from interval store based
+// on the EntryRef that is to be saved.
 template <typename IntervalT>
-class IntervalSerializer : public PostingSerializer<EntryRef> {
+class IntervalSaver : public PostingSaver<EntryRef> {
     const PredicateIntervalStore &_store;
 public:
-    IntervalSerializer(const PredicateIntervalStore &store) : _store(store) {}
-    void serialize(const EntryRef &ref, DataBuffer &buffer) const override {
+    IntervalSaver(const PredicateIntervalStore &store) : _store(store) {}
+    void save(const EntryRef &ref, BufferWriter& writer) const override {
         uint32_t size;
         IntervalT single_buf;
         const IntervalT *interval = _store.get(ref, size, &single_buf);
-        buffer.writeInt16(size);
+        nbo_write<uint16_t>(writer, size);
         for (uint32_t i = 0; i < size; ++i) {
-            interval[i].serialize(buffer);
+            interval[i].save(writer);
         }
     }
 };
@@ -127,26 +128,14 @@ PredicateIndex::PredicateIndex(GenerationHolder &genHolder,
 
 PredicateIndex::~PredicateIndex() = default;
 
-void
-PredicateIndex::serialize(DataBuffer &buffer, SerializeStats& stats) const {
-    {
-        auto saver = _features_store.make_saver();
-        DataBufferWriter writer(buffer);
-        saver->save(writer);
-        writer.flush();
-    }
-    stats._features_len = buffer.getDataLen();
-    auto old_len = buffer.getDataLen();
-    buffer.writeInt16(_arity);
-    buffer.writeInt32(_zero_constraint_docs.size());
-    for (auto it = _zero_constraint_docs.begin(); it.valid(); ++it) {
-        buffer.writeInt32(it.getKey());
-    }
-    stats._zeroes_len = buffer.getDataLen() - old_len;
-    IntervalSerializer<Interval> interval_serializer(_interval_store);
-    _interval_index.serialize(buffer, interval_serializer, stats._interval);
-    IntervalSerializer<IntervalWithBounds> bounds_serializer(_interval_store);
-    _bounds_index.serialize(buffer, bounds_serializer, stats._interval_with_bounds);
+std::unique_ptr<ISaver>
+PredicateIndex::make_saver() const
+{
+    return std::make_unique<PredicateIndexSaver>(_features_store.make_saver(),
+                                                 _arity,
+                                                 _zero_constraint_docs.getFrozenView(),
+                                                 _interval_index.make_saver(std::make_unique<IntervalSaver<Interval>>(_interval_store)),
+                                                 _bounds_index.make_saver(std::make_unique<IntervalSaver<IntervalWithBounds>>(_interval_store)));
 }
 
 void

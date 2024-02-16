@@ -389,7 +389,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DYNAMIC_HEAP_SIZE = defineFeatureFlag(
             "dynamic-heap-size", true,
-            List.of("bjorncs"), "2023-09-21", "2024-02-15",
+            List.of("bjorncs"), "2023-09-21", "2024-04-15",
             "Whether to calculate JVM heap size based on predicted Onnx model memory requirements",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -420,13 +420,6 @@ public class Flags {
             List.of("bjorncs", "oyving"), "2023-10-13", "2024-03-01",
             "Whether to send cloud trial email notifications",
             "Takes effect immediately");
-
-    public static final UnboundBooleanFlag ENABLE_NEW_PAYMENT_METHOD_FLOW = defineFeatureFlag(
-            "enable-new-payment-method-flow", false,
-            List.of("bjorncs"), "2023-11-29", "2024-03-01",
-            "Whether to enable the new billing flow",
-            "Takes effect immediately",
-            TENANT_ID, CONSOLE_USER_EMAIL);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
