@@ -19,6 +19,7 @@ import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.serialization.DocumentDeserializer;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.messagebus.Routable;
 import com.yahoo.vdslib.DocumentSummary;
@@ -56,17 +57,31 @@ abstract class RoutableFactories80 {
         }
 
         @Override
-        public boolean encode(Routable obj, DocumentSerializer out) {
+        public byte[] encode(int msgType, Routable obj) {
             try {
                 var protoMsg = encoderFn.apply(apiClass.cast(obj));
-                // TODO avoid this buffer indirection by directly exposing an OutputStream to write into...!
-                //  ... or at the very least have a way to preallocate buffer output of protoMsg.getSerializedSize() bytes!
-                out.getBuf().put(protoMsg.toByteArray());
-            } catch (RuntimeException e) {
+                int protoSize = protoMsg.getSerializedSize();
+                // The message payload contains a 4-byte header int which specifies the type of the message
+                // that follows. We want to write this header and the subsequence message bytes using a single
+                // allocation and without unneeded copying, so we create one array for both purposes and encode
+                // directly into it. Aside from the header, this is pretty much a mirror image of what the
+                // toByteArray() method on Protobuf message objects already does.
+                var buf = new byte[4 + protoSize];
+                ByteBuffer.wrap(buf).putInt(msgType); // In network order (default setting)
+                var protoStream = CodedOutputStream.newInstance(buf, 4, protoSize);
+                protoMsg.writeTo(protoStream); // Writing straight to array, no need to flush
+                protoStream.checkNoSpaceLeft();
+                return buf;
+            } catch (IOException | RuntimeException e) {
                 logCodecError("encoding", e);
-                return false;
+                return null;
             }
-            return true;
+        }
+
+        @Override
+        public boolean encode(Routable obj, DocumentSerializer out) {
+            // Legacy encode; not supported
+            return false;
         }
 
         @Override
@@ -225,7 +240,7 @@ abstract class RoutableFactories80 {
 
     private static ByteBuffer serializeUpdate(DocumentUpdate update) {
         var buf = new GrowableByteBuffer();
-        update.serialize(buf);
+        update.serialize(DocumentSerializerFactory.createHead(buf));
         buf.flip();
         return buf.getByteBuffer();
     }
