@@ -1,4 +1,4 @@
-package com.yahoo.restapi;
+package ai.vespa.json;
 
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -7,6 +7,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -25,7 +26,7 @@ import static com.yahoo.slime.Type.ARRAY;
 import static com.yahoo.slime.Type.STRING;
 
 /**
- * A {@link Slime} wrapper that throws {@link RestApiException.BadRequest} on missing members or invalid types.
+ * A {@link Slime} wrapper that throws {@link InvalidJsonException} on missing members or invalid types.
  *
  * @author bjorncs
  */
@@ -145,16 +146,16 @@ public class Json implements Iterable<Json> {
 
     private void requirePresent() { if (isMissing()) throw createMissingMemberException(); }
 
-    private RestApiException.BadRequest createInvalidTypeException(Type... expected) {
+    private InvalidJsonException createInvalidTypeException(Type... expected) {
         var expectedTypesString = Arrays.stream(expected).map(this::toString).collect(Collectors.joining("' or '", "'", "'"));
         var pathString = path.isEmpty() ? "JSON" : "JSON member '%s'".formatted(path);
-        return new RestApiException.BadRequest(
+        return new InvalidJsonException(
                 "Expected %s to be a %s but got '%s'"
                         .formatted(pathString, expectedTypesString, toString(inspector.type())));
     }
 
-    private RestApiException.BadRequest createMissingMemberException() {
-        return new RestApiException.BadRequest(path.isEmpty() ? "Missing JSON" : "Missing JSON member '%s'".formatted(path));
+    private InvalidJsonException createMissingMemberException() {
+        return new InvalidJsonException(path.isEmpty() ? "Missing JSON" : "Missing JSON member '%s'".formatted(path));
     }
 
     private String toString(Type type) {
@@ -183,6 +184,7 @@ public class Json implements Iterable<Json> {
 
         public static Builder.Array newArray() { return new Builder.Array(new Slime().setArray()); }
         public static Builder.Object newObject() { return new Builder.Object(new Slime().setObject()); }
+        public static Builder.Object existingObject(Cursor cursor) { return new Builder.Object(cursor); }
 
         private Builder(Cursor cursor) { this.cursor = cursor; }
 
@@ -230,8 +232,10 @@ public class Json implements Iterable<Json> {
             public Builder.Object set(String field, long value) { cursor.setLong(field, value); return this; }
             public Builder.Object set(String field, double value) { cursor.setDouble(field, value); return this; }
             public Builder.Object set(String field, boolean value) { cursor.setBool(field, value); return this; }
+            public Builder.Object set(String field, BigDecimal value) { cursor.setString(field, value.toPlainString()); return this; }
         }
 
+        public Cursor slimeCursor() { return cursor; }
         public Json build() { return Json.of(cursor); }
     }
 }
