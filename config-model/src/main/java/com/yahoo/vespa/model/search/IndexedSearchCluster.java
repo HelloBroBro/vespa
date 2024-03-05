@@ -20,54 +20,38 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.content.DispatchTuning;
+import com.yahoo.vespa.model.content.Redundancy;
 import com.yahoo.vespa.model.content.SearchCoverage;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 /**
  * @author baldersheim
  */
-public class IndexedSearchCluster extends SearchCluster
-    implements
-        DocumentdbInfoConfig.Producer,
-        IndexInfoConfig.Producer,
-        SchemaInfoConfig.Producer,
-        IlscriptsConfig.Producer,
+public class IndexedSearchCluster extends SearchCluster implements
         DispatchConfig.Producer,
-        DispatchNodesConfig.Producer,
-        ConfigInstance.Producer {
+        DispatchNodesConfig.Producer
+{
 
     private Tuning tuning;
     private SearchCoverage searchCoverage;
 
-    // This is the document selector string as derived from the subscription tag.
-    private String routingSelector = null;
     private final List<DocumentDatabase> documentDbs = new LinkedList<>();
-    private final MultipleDocumentDatabasesConfigProducer documentDbsConfigProducer;
 
-    private int redundancy = 1;
+    private final Redundancy.Provider redundancyProvider;
 
     private final List<SearchNode> searchNodes = new ArrayList<>();
     private final DispatchTuning.DispatchPolicy defaultDispatchPolicy;
     private final double dispatchWarmup;
     private final String summaryDecodePolicy;
-    /**
-     * Returns the document selector that is able to resolve what documents are to be routed to this search cluster.
-     * This string uses the document selector language as defined in the "document" module.
-     *
-     * @return the document selector
-     */
-    public String getRoutingSelector() {
-        return routingSelector;
-    }
 
-    public IndexedSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName, int index, ModelContext.FeatureFlags featureFlags) {
+    public IndexedSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName, int index,
+                                Redundancy.Provider redundancyProvider, ModelContext.FeatureFlags featureFlags) {
         super(parent, clusterName, index);
-        documentDbsConfigProducer = new MultipleDocumentDatabasesConfigProducer(this, documentDbs);
+        this.redundancyProvider = redundancyProvider;
         defaultDispatchPolicy = DispatchTuning.Builder.toDispatchPolicy(featureFlags.queryDispatchPolicy());
         dispatchWarmup = featureFlags.queryDispatchWarmup();
         summaryDecodePolicy = featureFlags.summaryDecodePolicy();
@@ -100,32 +84,6 @@ public class IndexedSearchCluster extends SearchCluster
     private void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
         ddbB.inputdoctypename(sdoc.getSchemaName())
             .configid(sdoc.getConfigId());
-    }
-
-    public void setRoutingSelector(String selector) {
-        this.routingSelector = selector;
-        if (this.routingSelector != null) {
-            try {
-                new DocumentSelectionConverter(this.routingSelector);
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Invalid routing selector: " + e.getMessage());
-            }
-        }
-    }
-    /**
-     * Create default config if not specified by user.
-     * Accept empty strings as user config - it means that all feeds/documents are accepted.
-     */
-    public void defaultDocumentsConfig() {
-        if ((routingSelector == null) && !getDocumentNames().isEmpty()) {
-            Iterator<String> it = getDocumentNames().iterator();
-            routingSelector = it.next();
-            StringBuilder sb = new StringBuilder(routingSelector);
-            while (it.hasNext()) {
-                sb.append(" or ").append(it.next());
-            }
-            routingSelector = sb.toString();
-        }
     }
 
     @Override
@@ -167,29 +125,25 @@ public class IndexedSearchCluster extends SearchCluster
 
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
-        documentDbsConfigProducer.getConfig(builder);
+        new Join(documentDbs).getConfig(builder);
     }
 
     @Override
     public void getConfig(SchemaInfoConfig.Builder builder) {
-        documentDbsConfigProducer.getConfig(builder);
+        new Join(documentDbs).getConfig(builder);
     }
 
     @Override
     public void getConfig(IlscriptsConfig.Builder builder) {
-        documentDbsConfigProducer.getConfig(builder);
+        new Join(documentDbs).getConfig(builder);
     }
 
     public void getConfig(AttributesConfig.Builder builder) {
-        documentDbsConfigProducer.getConfig(builder);
+        new Join(documentDbs).getConfig(builder);
     }
 
     public void getConfig(RankProfilesConfig.Builder builder) {
-        documentDbsConfigProducer.getConfig(builder);
-    }
-
-    public void setRedundancy(int redundancy) {
-        this.redundancy = redundancy;
+        new Join(documentDbs).getConfig(builder);
     }
 
     private static DistributionPolicy.Enum toDistributionPolicy(DispatchTuning.DispatchPolicy tuning) {
@@ -227,7 +181,7 @@ public class IndexedSearchCluster extends SearchCluster
         if (tuning.dispatch.getMaxHitsPerPartition() != null)
             builder.maxHitsPerNode(tuning.dispatch.getMaxHitsPerPartition());
 
-        builder.redundancy(redundancy);
+        builder.redundancy(redundancyProvider.redundancy().finalRedundancy());
         if (searchCoverage != null) {
             if (searchCoverage.getMinimum() != null)
                 builder.minSearchCoverage(searchCoverage.getMinimum() * 100.0);
@@ -255,53 +209,36 @@ public class IndexedSearchCluster extends SearchCluster
 
     /**
      * Class used to retrieve combined configuration from multiple document databases.
-     * It is not a direct {@link com.yahoo.config.ConfigInstance.Producer} of those configs,
+     * It is not a direct {@link ConfigInstance.Producer} of those configs,
      * that is handled (by delegating to this) by the {@link IndexedSearchCluster}
      * which is the parent to this. This avoids building the config multiple times.
      */
-    public static class MultipleDocumentDatabasesConfigProducer
-            extends TreeConfigProducer<MultipleDocumentDatabasesConfigProducer>
-            implements AttributesConfig.Producer,
-                       IndexInfoConfig.Producer,
-                       IlscriptsConfig.Producer,
-                       SchemaInfoConfig.Producer,
-                       RankProfilesConfig.Producer {
-        private final List<DocumentDatabase> docDbs;
+    private record Join(List<DocumentDatabase> docDbs) {
 
-        private MultipleDocumentDatabasesConfigProducer(TreeConfigProducer<?> parent, List<DocumentDatabase> docDbs) {
-            super(parent, "union");
-            this.docDbs = docDbs;
-        }
-
-        @Override
         public void getConfig(IndexInfoConfig.Builder builder) {
             for (DocumentDatabase docDb : docDbs) {
                 docDb.getConfig(builder);
             }
         }
 
-        @Override
         public void getConfig(SchemaInfoConfig.Builder builder) {
             for (DocumentDatabase docDb : docDbs) {
                 docDb.getConfig(builder);
             }
         }
 
-        @Override
         public void getConfig(IlscriptsConfig.Builder builder) {
             for (DocumentDatabase docDb : docDbs) {
                 docDb.getConfig(builder);
             }
         }
 
-        @Override
         public void getConfig(AttributesConfig.Builder builder) {
             for (DocumentDatabase docDb : docDbs) {
                 docDb.getConfig(builder);
             }
         }
 
-        @Override
         public void getConfig(RankProfilesConfig.Builder builder) {
             for (DocumentDatabase docDb : docDbs) {
                 docDb.getConfig(builder);
