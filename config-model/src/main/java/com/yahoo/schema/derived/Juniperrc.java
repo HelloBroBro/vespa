@@ -6,7 +6,9 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.config.search.summary.JuniperrcConfig;
 
+import java.util.ArrayList;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Generated juniperrc-config for controlling juniper.
@@ -44,18 +46,22 @@ public class Juniperrc extends Derived implements JuniperrcConfig.Producer {
     @Override
     protected String getDerivedName() { return "juniperrc"; }
 
+    private static JuniperrcConfig.Override.Builder createOverride(String name) {
+        return new JuniperrcConfig.Override.Builder()
+                .fieldname(name)
+                .length(64*Mb)
+                .max_matches(1)
+                .min_length(8192)
+                .surround_max(64*Mb);
+    }
+
     @Override
     public void getConfig(JuniperrcConfig.Builder builder) {
-        if (boldingFields.size() != 0) {
+        // Replace
+        if (!boldingFields.isEmpty()) {
             builder.prefix(true);
-            for (String name : boldingFields) {
-                builder.override(new JuniperrcConfig.Override.Builder()
-                    .fieldname(name)
-                    .length(64*Mb)
-                    .max_matches(1)
-                    .min_length(8192)
-                    .surround_max(64*Mb));
-            }
+            // Needs an modifiable list for config overrides ....
+            builder.override(boldingFields.stream().map(Juniperrc::createOverride).collect(Collectors.toCollection(() -> new ArrayList<>())));
         }
     }
 
