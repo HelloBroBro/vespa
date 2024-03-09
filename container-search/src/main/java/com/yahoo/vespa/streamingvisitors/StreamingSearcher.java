@@ -59,7 +59,6 @@ public class StreamingSearcher extends VespaBackEndSearcher {
 
     /** The configId used to access the searchcluster. */
     private String searchClusterName = null;
-    private String documentType;
 
     /** The route to the storage cluster. */
     private String storageClusterRouteSpec = null;
@@ -81,9 +80,6 @@ public class StreamingSearcher extends VespaBackEndSearcher {
     private String getSearchClusterName() { return searchClusterName; }
     private String getStorageClusterRouteSpec() { return storageClusterRouteSpec; }
     public final void setSearchClusterName(String clusterName) { this.searchClusterName = clusterName; }
-    public final void setDocumentType(String documentType) {
-        this.documentType = documentType;
-    }
 
     public final void setStorageClusterRouteSpec(String storageClusterRouteSpec) {
         this.storageClusterRouteSpec = storageClusterRouteSpec;
@@ -130,7 +126,7 @@ public class StreamingSearcher extends VespaBackEndSearcher {
     }
 
     @Override
-    public Result doSearch2(Query query, Execution execution) {
+    public Result doSearch2(String schema, Query query) {
         if (query.getTimeLeft() <= 0)
             return new Result(query, ErrorMessage.createTimeout(String.format("No time left for searching (timeout=%d)", query.getTimeout())));
 
@@ -139,12 +135,13 @@ public class StreamingSearcher extends VespaBackEndSearcher {
             return new Result(query, ErrorMessage.createIllegalQuery("Streaming search requires either " +
                                                                      "streaming.groupname or streaming.selection"));
         }
+
         if (query.getTrace().isTraceable(4))
-            query.trace("Routing to search cluster " + getSearchClusterName() + " and document type " + documentType, 4);
+            query.trace("Routing to search cluster " + getSearchClusterName() + " and document type " + schema, 4);
         long timeStartedNanos = tracingOptions.getClock().nanoTimeNow();
         int effectiveTraceLevel = inferEffectiveQueryTraceLevel(query);
 
-        Visitor visitor = visitorFactory.createVisitor(query, getSearchClusterName(), route, documentType, effectiveTraceLevel);
+        Visitor visitor = visitorFactory.createVisitor(query, getSearchClusterName(), route, schema, effectiveTraceLevel);
         try {
             visitor.doSearch();
         } catch (ParseException e) {
@@ -265,7 +262,7 @@ public class StreamingSearcher extends VespaBackEndSearcher {
         lazyTrace(query, 8, "Returning result ", result);
 
         if (skippedHits > 0) {
-            getLogger().info("skipping " + skippedHits + " hits for query: " + result.getQuery());
+            log.info("skipping " + skippedHits + " hits for query: " + result.getQuery());
             result.hits().addError(ErrorMessage.createTimeout("Missing hit summary data for " + skippedHits + " hits"));
         }
 
@@ -367,8 +364,8 @@ public class StreamingSearcher extends VespaBackEndSearcher {
         }
 
         @Override
-        public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
-            return new StreamingVisitor(query, searchCluster, route, documentType, this, traceLevelOverride);
+        public Visitor createVisitor(Query query, String searchCluster, Route route, String schema, int traceLevelOverride) {
+            return new StreamingVisitor(query, searchCluster, route, schema, this, traceLevelOverride);
         }
 
     }
