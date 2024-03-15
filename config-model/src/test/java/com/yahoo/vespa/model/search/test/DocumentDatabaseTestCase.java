@@ -15,7 +15,6 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.utils.DocType;
-import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -188,13 +187,13 @@ public class DocumentDatabaseTestCase {
         List<String> sds = List.of("type1", "type2", "type3");
         var tester = new SchemaTester();
         var model = tester.createModel(sds);
-        IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster) model.getSearchClusters().get(0);
+        var searchCluster = model.getSearchClusters().get(0);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         String type1Id = "test/search/cluster.test/type1";
         String type2Id = "test/search/cluster.test/type2";
         String type3Id = "test/search/cluster.test/type3";
         {
-            assertEquals(3, indexedSearchCluster.getDocumentDbs().size());
+            assertEquals(3, searchCluster.getDocumentDbs().size());
             ProtonConfig proton = tester.getProtonConfig(contentSearchCluster);
             assertEquals(3, proton.documentdb().size());
             assertEquals("type1", proton.documentdb(0).inputdoctypename());
@@ -253,9 +252,9 @@ public class DocumentDatabaseTestCase {
         constants.put(Path.fromString("constants/my_constant_1.json.lz4"), "");
         constants.put(Path.fromString("constants/my_constant_2.json.lz4"), "");
         var model = tester.createModel(schemaConstants, "", schemas, constants);
-        IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster) model.getSearchClusters().get(0);
+        var searchCluster = model.getSearchClusters().get(0);
         RankingConstantsConfig.Builder b = new RankingConstantsConfig.Builder();
-        indexedSearchCluster.getDocumentDbs().get(0).getConfig(b);
+        searchCluster.getDocumentDbs().get(0).getConfig(b);
         RankingConstantsConfig config = b.build();
         assertEquals(2, config.constant().size());
 
@@ -389,7 +388,7 @@ public class DocumentDatabaseTestCase {
     @Test
     void testThatAttributesConfigIsProducedForStreamingForFastAccessFields() {
         assertAttributesConfigIndependentOfMode("streaming", List.of("type1"),
-                List.of("test/search/cluster.test/type1"),
+                List.of("test/search/type1"),
                 Map.of("type1", List.of("f2")));
     }
 
