@@ -62,8 +62,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "</content>");
 
         ContentSearchCluster s = a.getSearch();
-        assertFalse(s.hasIndexedCluster());
-        assertTrue(s.getClusters().isEmpty());
+        assertFalse(s.hasSearchCluster());
 
         assertTrue(a.getPersistence() instanceof com.yahoo.vespa.model.content.engines.DummyPersistence.Factory);
     }
@@ -82,8 +81,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "</content>");
 
         ContentSearchCluster s = a.getSearch();
-        assertFalse(s.hasIndexedCluster());
-        assertTrue(s.getClusters().isEmpty());
+        assertFalse(s.hasSearchCluster());
 
         assertTrue(a.getPersistence() instanceof ProtonEngine.Factory);
 
@@ -107,8 +105,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "</content>");
 
         ContentSearchCluster s = a.getSearch();
-        assertFalse(s.hasIndexedCluster());
-        assertTrue(s.getClusters().isEmpty());
+        assertFalse(s.hasSearchCluster());
 
         assertTrue(a.getPersistence() instanceof ProtonEngine.Factory);
 
@@ -129,9 +126,8 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "</content>");
 
         ContentSearchCluster s = a.getSearch();
-        assertFalse(s.hasIndexedCluster());
-        assertTrue(s.getClusters().isEmpty());
-        assertNull(s.getIndexed());
+        assertFalse(s.hasSearchCluster());
+        assertNull(s.getSearchCluster());
 
         assertNull(a.getRootGroup().getName());
         assertNull(a.getRootGroup().getIndex());
@@ -150,11 +146,10 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         ContentCluster c = CollectionUtil.first(m.getContentClusters().values());
         ContentSearchCluster s = c.getSearch();
-        assertTrue(s.hasIndexedCluster());
-        assertEquals(1, s.getClusters().size());
-        assertNotNull(s.getIndexed());
-        assertEquals("clu", s.getIndexed().getClusterName());
-        assertEquals(7.3, s.getIndexed().getQueryTimeout(), 0.0);
+        assertTrue(s.hasSearchCluster());
+        assertNotNull(s.getSearchCluster());
+        assertEquals("clu", s.getSearchCluster().getClusterName());
+        assertEquals(7.3, s.getSearchCluster().getQueryTimeout(), 0.0);
 
         assertTrue(c.getPersistence() instanceof ProtonEngine.Factory);
         assertEquals(1, c.getStorageCluster().getChildren().size());
@@ -175,7 +170,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         String services = getServices("<node hostalias='mockhost' distribution-key='0'/>" +
                 "<node hostalias='mockhost' distribution-key='1'/>");
         VespaModel m = new VespaModelCreatorWithMockPkg(createAppWithMusic(getHosts(), services)).create();
-        IndexedSearchCluster sc = m.getContentClusters().get("clu").getSearch().getIndexed();
+        IndexedSearchCluster sc = m.getContentClusters().get("clu").getSearch().getSearchCluster();
         assertEquals(2, sc.getSearchNodeCount());
     }
 
@@ -196,11 +191,9 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentSearchCluster s;
 
         s = cluster.getSearch();
-        assertFalse(s.hasIndexedCluster());
-        assertEquals(1, s.getClusters().size());
-        assertNull(s.getIndexed());
-        SearchCluster sc = s.getClusters().get(musicClusterId + ".music");
-        assertEquals(musicClusterId + ".music", sc.getClusterName());
+        assertTrue(s.hasSearchCluster());
+        SearchCluster sc = s.getSearchCluster();
+        assertEquals(musicClusterId, sc.getClusterName());
         assertEquals(musicClusterId, sc.getStorageRouteSpec());
 
         assertTrue(cluster.getPersistence() instanceof ProtonEngine.Factory);
@@ -236,24 +229,11 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
                         "    </group>" +
                         "</content>");
-        ContentSearchCluster s;
-
-        s = cluster.getSearch();
-        assertFalse(s.hasIndexedCluster());
-        assertEquals(2, s.getClusters().size());
-        assertNull(s.getIndexed());
-        {
-            String id = musicClusterId + ".book";
-            SearchCluster sc = s.getClusters().get(id);
-            assertEquals(id, sc.getClusterName());
-            assertEquals(musicClusterId, sc.getStorageRouteSpec());
-        }
-        {
-            String id = musicClusterId + ".music";
-            SearchCluster sc = s.getClusters().get(id);
-            assertEquals(id, sc.getClusterName());
-            assertEquals(musicClusterId, sc.getStorageRouteSpec());
-        }
+        ContentSearchCluster s = cluster.getSearch();
+        assertTrue(s.hasSearchCluster());
+        assertEquals(2, s.getSearchCluster().getDocumentDbs().size());
+        assertTrue(s.getSearchCluster().hasDocumentDB("book"));
+        assertTrue(s.getSearchCluster().hasDocumentDB("music"));
 
         assertTrue(cluster.getPersistence() instanceof ProtonEngine.Factory);
         assertEquals(1, cluster.getStorageCluster().getChildren().size());
@@ -276,10 +256,9 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentSearchCluster s;
 
         s = b.getSearch();
-        assertTrue(s.hasIndexedCluster());
-        assertEquals(1, s.getClusters().size());
-        assertNotNull(s.getIndexed());
-        assertEquals("b", s.getIndexed().getClusterName());
+        assertTrue(s.hasSearchCluster());
+        assertNotNull(s.getSearchCluster());
+        assertEquals("b", s.getSearchCluster().getClusterName());
 
         assertTrue(b.getPersistence() instanceof ProtonEngine.Factory);
         assertEquals(1, b.getStorageCluster().getChildren().size());
@@ -308,8 +287,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentSearchCluster s;
 
         s = b.getSearch();
-        assertTrue(s.hasIndexedCluster());
-        assertNotNull(s.getIndexed());
+        assertTrue(s.hasSearchCluster());
+        assertNotNull(s.getSearchCluster());
         assertEquals(2, b.getStorageCluster().getChildren().size());
         assertTrue(b.getRootGroup().getMmapNoCoreLimit().isPresent());
         assertEquals(200000, b.getRootGroup().getMmapNoCoreLimit().get().longValue());
@@ -334,8 +313,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentSearchCluster s;
 
         s = b.getSearch();
-        assertTrue(s.hasIndexedCluster());
-        assertNotNull(s.getIndexed());
+        assertTrue(s.hasSearchCluster());
+        assertNotNull(s.getSearchCluster());
         assertEquals(1, b.getStorageCluster().getChildren().size());
 
         assertEquals(1, s.getSearchNodes().size());
@@ -363,8 +342,8 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "    </group>" +
                         "</content>", new TestProperties().setEnvironmentVariables(List.of("MY_1_ENV=xyz abc", "MY_2_ENV=2")));
         ContentSearchCluster s = b.getSearch();
-        assertTrue(s.hasIndexedCluster());
-        assertNotNull(s.getIndexed());
+        assertTrue(s.hasSearchCluster());
+        assertNotNull(s.getSearchCluster());
         assertEquals(1, b.getStorageCluster().getChildren().size());
 
         assertEquals(1, s.getSearchNodes().size());
@@ -389,8 +368,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentSearchCluster s;
 
         s = b.getSearch();
-        assertTrue(s.hasIndexedCluster());
-        assertNotNull(s.getIndexed());
+        assertTrue(s.hasSearchCluster());
+        assertNotNull(s.getSearchCluster());
         assertEquals(2, b.getStorageCluster().getChildren().size());
         assertTrue(b.getRootGroup().getCoreOnOOM().isPresent());
         assertTrue(b.getRootGroup().getCoreOnOOM().get());
@@ -414,8 +393,8 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "    </group>" +
                         "</content>");
         ContentSearchCluster s = b.getSearch();
-        assertTrue(s.hasIndexedCluster());
-        assertNotNull(s.getIndexed());
+        assertTrue(s.hasSearchCluster());
+        assertNotNull(s.getSearchCluster());
         assertEquals(2, b.getStorageCluster().getChildren().size());
         assertFalse(b.getRootGroup().getCoreOnOOM().isPresent());
 
@@ -438,8 +417,8 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "    </group>" +
                         "</content>");
         ContentSearchCluster s = b.getSearch();
-        assertTrue(s.hasIndexedCluster());
-        assertNotNull(s.getIndexed());
+        assertTrue(s.hasSearchCluster());
+        assertNotNull(s.getSearchCluster());
         assertEquals(2, b.getStorageCluster().getChildren().size());
         assertFalse(b.getRootGroup().getMmapNoCoreLimit().isPresent());
 
@@ -462,8 +441,8 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "    </group>" +
                         "</content>");
         ContentSearchCluster s = b.getSearch();
-        assertTrue(s.hasIndexedCluster());
-        assertNotNull(s.getIndexed());
+        assertTrue(s.hasSearchCluster());
+        assertNotNull(s.getSearchCluster());
         assertEquals(2, b.getStorageCluster().getChildren().size());
         assertFalse(b.getRootGroup().getCoreOnOOM().isPresent());
 
@@ -488,8 +467,8 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "    </group>" +
                         "</content>");
         ContentSearchCluster s = b.getSearch();
-        assertTrue(s.hasIndexedCluster());
-        assertNotNull(s.getIndexed());
+        assertTrue(s.hasSearchCluster());
+        assertNotNull(s.getSearchCluster());
         assertEquals(4, b.getStorageCluster().getChildren().size());
         assertTrue(b.getRootGroup().getNoVespaMalloc().isPresent());
         assertEquals("proton", b.getRootGroup().getNoVespaMalloc().get());
@@ -522,8 +501,8 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "    </group>" +
                         "</content>");
         ContentSearchCluster s = b.getSearch();
-        assertTrue(s.hasIndexedCluster());
-        assertNotNull(s.getIndexed());
+        assertTrue(s.hasSearchCluster());
+        assertNotNull(s.getSearchCluster());
         assertEquals(4, b.getStorageCluster().getChildren().size());
         assertFalse(b.getRootGroup().getNoVespaMalloc().isPresent());
         assertFalse(b.getRootGroup().getVespaMalloc().isPresent());
@@ -553,8 +532,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentSearchCluster s;
 
         s = b.getSearch();
-        assertTrue(s.hasIndexedCluster());
-        assertNotNull(s.getIndexed());
+        assertTrue(s.hasSearchCluster());
+        assertNotNull(s.getSearchCluster());
         assertEquals(2, b.getStorageCluster().getChildren().size());
         assertTrue(b.getStorageCluster().getChildren().get("0").getAffinity().isPresent());
         assertEquals(0, b.getStorageCluster().getChildren().get("0").getAffinity().get().cpuSocket());
@@ -588,8 +567,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentSearchCluster s;
 
         s = b.getSearch();
-        assertTrue(s.hasIndexedCluster());
-        assertNotNull(s.getIndexed());
+        assertTrue(s.hasSearchCluster());
+        assertNotNull(s.getSearchCluster());
         assertEquals(6, b.getStorageCluster().getChildren().size());
         assertTrue(b.getRootGroup().useCpuSocketAffinity());
 
@@ -627,18 +606,17 @@ public class ContentBuilderTest extends DomBuilderTest {
     void requireBug5357273() {
         try {
             createContent(
-                    "  <content version='1.0' id='storage'>\n" +
-                            "      <redundancy>3</redundancy>\n" +
-                            "    <documents>" +
-                            "       <document type='music' mode='index'/>" +
-                            "    </documents>" +
-                            "      <group>\n" +
-                            "        <node hostalias='mockhost' distribution-key='0' />\n" +
-                            "      </group>\n" +
-                            "      <engine>\n" +
-                            "       <dummy/>\n" +
-                            "      </engine>\n" +
-                            "  </content>\n");
+                    """
+                              <content version='1.0' id='storage'>
+                                  <redundancy>3</redundancy>
+                                <documents>       <document type='music' mode='index'/>    </documents>      <group>
+                                    <node hostalias='mockhost' distribution-key='0' />
+                                  </group>
+                                  <engine>
+                                   <dummy/>
+                                  </engine>
+                              </content>
+                            """);
 
             fail();
         } catch (Exception e) {
@@ -716,8 +694,8 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "  </group>" +
                         "</content>");
         ProtonConfig.Builder builder = new ProtonConfig.Builder();
-        content.getSearch().getIndexed().getSearchNode(0).cascadeConfig(builder);
-        content.getSearch().getIndexed().getSearchNode(0).addUserConfig(builder);
+        content.getSearch().getSearchCluster().getSearchNode(0).cascadeConfig(builder);
+        content.getSearch().getSearchCluster().getSearchNode(0).addUserConfig(builder);
         ProtonConfig config = new ProtonConfig(builder);
         assertEquals(1, config.search().mmap().options().size());
         assertEquals(ProtonConfig.Search.Mmap.Options.POPULATE, config.search().mmap().options(0));
@@ -847,8 +825,8 @@ public class ContentBuilderTest extends DomBuilderTest {
 
     private ProtonConfig getProtonConfig(ContentCluster content) {
         ProtonConfig.Builder configBuilder = new ProtonConfig.Builder();
-        content.getSearch().getIndexed().getSearchNode(0).cascadeConfig(configBuilder);
-        content.getSearch().getIndexed().getSearchNode(0).addUserConfig(configBuilder);
+        content.getSearch().getSearchCluster().getSearchNode(0).cascadeConfig(configBuilder);
+        content.getSearch().getSearchCluster().getSearchNode(0).addUserConfig(configBuilder);
 
         return new ProtonConfig(configBuilder);
     }
