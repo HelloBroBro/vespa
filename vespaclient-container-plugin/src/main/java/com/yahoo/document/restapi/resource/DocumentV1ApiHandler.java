@@ -187,16 +187,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private final Metric metric;
     private final DocumentApiMetrics metrics;
     private final DocumentOperationParser parser;
-    private final long maxThrottled;
     private final DocumentAccess access;
     private final AsyncSession asyncSession;
     private final Map<String, StorageCluster> clusters;
-    private final Deque<Operation> operations;
     private final Deque<BooleanSupplier> visitOperations = new ConcurrentLinkedDeque<>();
-    private final AtomicLong enqueued = new AtomicLong();
     private final AtomicLong outstanding = new AtomicLong();
     private final Map<VisitorControlHandler, VisitorSession> visits = new ConcurrentHashMap<>();
-    private final ScheduledExecutorService dispatcher = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory("document-api-handler-"));
     private final ScheduledExecutorService visitDispatcher = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory("document-api-handler-visit-"));
     private final Map<String, Map<Method, Handler>> handlers = defineApi();
 
@@ -220,15 +216,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.parser = new DocumentOperationParser(documentmanagerConfig);
         this.metric = metric;
         this.metrics = new DocumentApiMetrics(metricReceiver, "documentV1");
-        this.maxThrottled = executorConfig.maxThrottled();
         this.access = access;
         this.asyncSession = access.createAsyncSession(new AsyncParameters());
         this.clusters = parseClusters(clusterListConfig, bucketSpacesConfig);
-        this.operations = new ConcurrentLinkedDeque<>();
         long resendDelayMS = SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(executorConfig.resendDelayMillis())).toMillis();
 
         // TODO: Here it would be better to have dedicated threads with different wait depending on blocked or empty.
-        this.dispatcher.scheduleWithFixedDelay(this::dispatchEnqueued, resendDelayMS, resendDelayMS, MILLISECONDS);
         this.visitDispatcher.scheduleWithFixedDelay(this::dispatchVisitEnqueued, resendDelayMS, resendDelayMS, MILLISECONDS);
     }
 
@@ -286,26 +279,18 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         visits.values().forEach(VisitorSession::abort);
         visits.values().forEach(VisitorSession::destroy);
 
-        // Shut down both dispatchers, so only we empty the queues of outstanding operations, and can be sure they're empty.
-        dispatcher.shutdown();
+        // Shut down visitor dispatcher, so only we empty the queue of outstanding operations, and can be sure it is empty.
         visitDispatcher.shutdown();
-        while ( ! (operations.isEmpty() && visitOperations.isEmpty()) && clock.instant().isBefore(doom)) {
-            dispatchEnqueued();
+        while ( ! (visitOperations.isEmpty()) && clock.instant().isBefore(doom)) {
             dispatchVisitEnqueued();
         }
 
-        if ( ! operations.isEmpty())
-            log.log(WARNING, "Failed to empty request queue before shutdown timeout — " + operations.size() + " requests left");
-
         if ( ! visitOperations.isEmpty())
-            log.log(WARNING, "Failed to empty visitor operations queue before shutdown timeout — " + operations.size() + " operations left");
+            log.log(WARNING, "Failed to empty visitor operations queue before shutdown timeout — " + visitOperations.size() + " operations left");
 
         try {
             while (outstanding.get() > 0 && clock.instant().isBefore(doom))
                 Thread.sleep(Math.max(1, Duration.between(clock.instant(), doom).toMillis()));
-
-            if ( ! dispatcher.awaitTermination(Duration.between(clock.instant(), doom).toMillis(), MILLISECONDS))
-                dispatcher.shutdownNow();
 
             if ( ! visitDispatcher.awaitTermination(Duration.between(clock.instant(), doom).toMillis(), MILLISECONDS))
                 visitDispatcher.shutdownNow();
@@ -470,7 +455,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             enqueueAndDispatch(request, handler, () -> {
                 ParsedDocumentOperation parsed = parser.parsePut(in, path.id().toString());
                 DocumentPut put = (DocumentPut)parsed.operation();
-                getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(c -> put.setCondition(c));
+                getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(put::setCondition);
                 getProperty(request, CREATE, booleanParser).ifPresent(put::setCreateIfNonExistent);
                 DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
                         .withResponseHandler(response -> {
@@ -550,30 +535,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     /** Dispatches enqueued requests until one is blocked. */
-    void dispatchEnqueued() {
-        try {
-            while (dispatchFirst());
-        }
-        catch (Exception e) {
-            log.log(WARNING, "Uncaught exception in /document/v1 dispatch thread", e);
-        }
-    }
-
-    /** Attempts to dispatch the first enqueued operations, and returns whether this was successful. */
-    private boolean dispatchFirst() {
-        Operation operation = operations.poll();
-        if (operation == null)
-            return false;
-
-        if (operation.dispatch()) {
-            enqueued.decrementAndGet();
-            return true;
-        }
-        operations.push(operation);
-        return false;
-    }
-
-    /** Dispatches enqueued requests until one is blocked. */
     void dispatchVisitEnqueued() {
         try {
             while (dispatchFirstVisit());
@@ -601,13 +562,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
      * and then attempts to dispatch an enqueued operation from the head of the queue.
      */
     private void enqueueAndDispatch(HttpRequest request, ResponseHandler handler, Supplier<BooleanSupplier> operationParser) {
-        if (enqueued.incrementAndGet() > maxThrottled) {
-            enqueued.decrementAndGet();
-            overload(request, "Rejecting execution due to overload: " + maxThrottled + " requests already enqueued", handler);
-            return;
+        Operation operation = new Operation(request, handler, operationParser);
+        if ( ! operation.dispatch()) {
+            overload(request, "Rejecting execution due to overload: "
+                    + (long)asyncSession.getCurrentWindowSize() + " requests already enqueued", handler);
         }
-        operations.offer(new Operation(request, handler, operationParser));
-        dispatchFirst();
     }
 
 
