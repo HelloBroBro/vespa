@@ -1324,7 +1324,9 @@
       "public java.lang.String unknownConfigDefinition()",
       "public int searchHandlerThreadpool()",
       "public boolean alwaysMarkPhraseExpensive()",
-      "public boolean sortBlueprintsByCost()"
+      "public boolean sortBlueprintsByCost()",
+      "public int persistenceThreadMaxFeedOpBatchSize()",
+      "public boolean logserverOtelCol()"
     ],
     "fields" : [ ]
   },
