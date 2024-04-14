@@ -68,7 +68,7 @@
         <assertj.vespa.version>3.25.3</assertj.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <aws-sdk.vespa.version>1.12.700</aws-sdk.vespa.version>
+        <aws-sdk.vespa.version>1.12.701</aws-sdk.vespa.version>
         <athenz.vespa.version>1.11.55</athenz.vespa.version>
         <!-- Athenz END -->
 
@@ -137,7 +137,7 @@
         <plexus-archiver.vespa.version>4.9.2</plexus-archiver.vespa.version>
         <plexus-interpolation.vespa.version>1.27</plexus-interpolation.vespa.version>
         <plexus-io.vespa.version>3.4.2</plexus-io.vespa.version>
-        <plexus-utils.vespa.version>4.0.0</plexus-utils.vespa.version>
+        <plexus-utils.vespa.version>4.0.1</plexus-utils.vespa.version>
         <plexus-xml.vespa.version>4.0.3</plexus-xml.vespa.version>
         <protobuf.vespa.version>3.25.3</protobuf.vespa.version>
         <questdb.vespa.version>7.4.0</questdb.vespa.version>
@@ -176,7 +176,7 @@
         <maven-failsafe-plugin.vespa.version>3.2.5</maven-failsafe-plugin.vespa.version>
         <maven-gpg-plugin.vespa.version>3.2.3</maven-gpg-plugin.vespa.version>
         <maven-install-plugin.vespa.version>3.1.1</maven-install-plugin.vespa.version>
-        <maven-jar-plugin.vespa.version>3.3.0</maven-jar-plugin.vespa.version>
+        <maven-jar-plugin.vespa.version>3.4.0</maven-jar-plugin.vespa.version>
         <maven-javadoc-plugin.vespa.version>3.6.3</maven-javadoc-plugin.vespa.version>
         <maven-plugin-api.vespa.version>${maven-core.vespa.version}</maven-plugin-api.vespa.version>
         <maven-plugin-tools.vespa.version>3.12.0</maven-plugin-tools.vespa.version>
