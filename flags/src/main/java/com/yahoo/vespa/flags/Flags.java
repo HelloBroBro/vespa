@@ -231,6 +231,13 @@ public class Flags {
             "Takes effect on next tick.",
             NODE_TYPE);
 
+    public static final UnboundStringFlag DIST_HOST = defineStringFlag(
+            "dist-host", "",
+            List.of("freva"), "2024-04-15", "2024-05-31",
+            "Sets dist_host YUM variable, empty means old behavior. Only effective in Public.",
+            "Provisioning of instance or next host-admin tick",
+            HOSTNAME, NODE_TYPE, CLOUD_ACCOUNT);
+
     public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
             "enabled-horizon-dashboard", false,
             List.of("olaa"), "2021-09-13", "2024-09-01",
@@ -367,13 +374,6 @@ public class Flags {
             List.of("vekterli"), "2022-09-12", "2024-06-01",
             "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
             "cancellation and ephemeral content node sequence numbers for bucket replicas",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
-    public static final UnboundBooleanFlag DYNAMIC_HEAP_SIZE = defineFeatureFlag(
-            "dynamic-heap-size", true,
-            List.of("bjorncs"), "2023-09-21", "2024-04-15",
-            "Whether to calculate JVM heap size based on predicted Onnx model memory requirements",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
