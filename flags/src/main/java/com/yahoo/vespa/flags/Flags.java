@@ -84,6 +84,12 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag NEW_RESOURCES_FORMULA = defineFeatureFlag(
+            "new-resources-formula", true,
+            List.of("hakonhall"), "2024-04-25", "2024-05-25",
+            "Use an easier to understand formula for calculating the memory and disk resources",
+            "Takes effect on next deployment of an applications.");
+
     public static final UnboundBooleanFlag FIX_CONFIG_SERVER_HEAP = defineFeatureFlag(
             "fix-config-server-heap", false,
             List.of("hakonhall"), "2024-04-23", "2024-05-23",
@@ -427,12 +433,6 @@ public class Flags {
             List.of("mortent"), "2024-04-05", "2024-10-01",
             "Role definitions for the system",
             "Takes effect immediately");
-
-    public static UnboundBooleanFlag NEW_PATH_FOR_DISK_ENCRYPTION_KEY_METADATA  = defineFeatureFlag(
-            "new-path-for-disk-encryption-key-metadata", true,
-            List.of("hmusum"), "2024-04-08", "2024-06-01",
-            "Whether to read and write disk encryption key to new path",
-            "Will be read only on boot.");
 
     public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
             "persistence-thread-max-feed-op-batch-size", 1,
