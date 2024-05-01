@@ -2,6 +2,7 @@
 package com.yahoo.search.significance.test;
 
 import com.yahoo.component.chain.Chain;
+import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.language.Language;
 import com.yahoo.language.significance.SignificanceModel;
 import com.yahoo.language.significance.SignificanceModelRegistry;
@@ -12,10 +13,13 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.significance.SignificanceSearcher;
+import com.yahoo.vespa.config.search.RankProfilesConfig;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 
 import static com.yahoo.test.JunitCompat.assertEquals;
@@ -29,12 +33,24 @@ public class SignificanceSearcherTest {
     SignificanceModelRegistry significanceModelRegistry;
     SignificanceSearcher searcher;
 
-    public SignificanceSearcherTest() {
-        HashMap<Language, Path> map = new HashMap<>();
-        map.put(Language.ENGLISH, Path.of("src/test/java/com/yahoo/search/significance/model/en.json"));
+    private static final String CONFIG_DIR = "src/test/resources/config/";
 
-        significanceModelRegistry = new DefaultSignificanceModelRegistry(map);
-        searcher = new SignificanceSearcher(significanceModelRegistry);
+    public SignificanceSearcherTest() {
+        List<Path> models = new ArrayList<>();
+        models.add( Path.of("src/test/java/com/yahoo/search/significance/model/en.json"));
+
+        RankProfilesConfig rpCfg = readConfig("with_significance");
+
+        assertEquals(1, rpCfg.rankprofile().size());
+
+        significanceModelRegistry = new DefaultSignificanceModelRegistry(models);
+        searcher = new SignificanceSearcher(significanceModelRegistry, rpCfg);
+    }
+
+    @SuppressWarnings("deprecation")
+    private RankProfilesConfig readConfig(String subDir) {
+        String cfgId = "file:" + CONFIG_DIR + subDir + "/rank-profiles.cfg";
+        return ConfigGetter.getConfig(RankProfilesConfig.class, cfgId);
     }
 
     private Execution createExecution(SignificanceSearcher searcher) {
@@ -49,6 +65,7 @@ public class SignificanceSearcherTest {
     void testSignificanceValueOnSimpleQuery() {
 
         Query q = new Query();
+        q.getRanking().setProfile("significance-ranking");
         AndItem root = new AndItem();
         WordItem tmp;
         tmp = new WordItem("Hello", true);
@@ -79,6 +96,7 @@ public class SignificanceSearcherTest {
     @Test
     void testSignificanceValueOnRecursiveQuery() {
         Query q = new Query();
+        q.getRanking().setProfile("significance-ranking");
         AndItem root = new AndItem();
         WordItem child1 = new WordItem("hello", true);
 
