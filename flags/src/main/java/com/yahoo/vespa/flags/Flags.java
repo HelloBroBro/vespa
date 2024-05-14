@@ -53,7 +53,8 @@ public class Flags {
             List.of("hakonhall"), "2024-05-06", "2024-07-06",
             "Whether to provision new GCP VM instances with a service account that are independent " +
             "of the zone, and aligned with the Athenz service names (configserver and tenant-host).",
-            "Takes effect when provisioning new VM instances");
+            "Takes effect when provisioning new VM instances",
+            APPLICATION, INSTANCE_ID);
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
@@ -455,6 +456,12 @@ public class Flags {
             List.of("bjorncs"), "2024-05-07", "2025-01-01",
             "Whether to sync tenants to HubSpot",
             "Takes effect immediately");
+
+    public static final UnboundBooleanFlag REMOVE_ORPHANED_DNS_RECORDS = defineFeatureFlag(
+            "remove-orphaned-dns-records", false,
+            List.of("mpolden"), "2024-05-07", "2024-10-01",
+            "Whether EndpointDnsMaintainer should remove orphaned records instead of logging them",
+            "Takes effect on next maintenance run");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
