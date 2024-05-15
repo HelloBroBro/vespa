@@ -44,15 +44,8 @@ public:
         double score = 1.0 / (1.0 + d);
         return score;
     }
-    double calc_with_limit(TypedCells rhs, double limit) const noexcept override {
-        vespalib::ConstArrayRef<AttributeCellType> rhs_vector = rhs.unsafe_typify<AttributeCellType>();
-        double sum = 0.0;
-        size_t sz = _lhs_vector.size();
-        for (size_t i = 0; i < sz && sum <= limit; ++i) {
-            double diff = _lhs_vector[i] - rhs_vector[i];
-            sum += diff*diff;
-        }
-        return sum;
+    double calc_with_limit(TypedCells rhs, double) const noexcept override {
+        return calc(rhs);
     }
 };
 
@@ -63,14 +56,14 @@ template class BoundEuclideanDistance<double>;
 
 template <typename FloatType>
 BoundDistanceFunction::UP
-EuclideanDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) {
+EuclideanDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) const {
     using DFT = BoundEuclideanDistance<FloatType>;
     return std::make_unique<DFT>(lhs);
 }
 
 template <typename FloatType>
 BoundDistanceFunction::UP
-EuclideanDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) {
+EuclideanDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) const {
     using DFT = BoundEuclideanDistance<FloatType>;
     return std::make_unique<DFT>(lhs);
 }
