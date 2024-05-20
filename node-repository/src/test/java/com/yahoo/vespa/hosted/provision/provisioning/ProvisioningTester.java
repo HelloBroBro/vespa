@@ -8,12 +8,14 @@ import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.CapacityPolicies;
 import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
@@ -24,6 +26,7 @@ import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -92,7 +95,6 @@ public class ProvisioningTester {
     private final NodeRepository nodeRepository;
     private final HostProvisioner hostProvisioner;
     private final NodeRepositoryProvisioner provisioner;
-    private final CapacityPolicies capacityPolicies;
     private final InMemoryProvisionLogger provisionLogger;
     private final LoadBalancerServiceMock loadBalancerService;
 
@@ -131,7 +133,6 @@ public class ProvisioningTester {
                                                  true,
                                                  spareCount);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, new MockMetric());
-        this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.provisionLogger = new InMemoryProvisionLogger();
         this.loadBalancerService = loadBalancerService;
     }
@@ -159,14 +160,13 @@ public class ProvisioningTester {
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
     public HostProvisioner hostProvisioner() { return hostProvisioner; }
     public LoadBalancerServiceMock loadBalancerService() { return loadBalancerService; }
-    public CapacityPolicies capacityPolicies() { return capacityPolicies; }
     public NodeList getNodes(ApplicationId id, Node.State ... inState) { return nodeRepository.nodes().list(inState).owner(id); }
     public InMemoryFlagSource flagSource() { return (InMemoryFlagSource) nodeRepository.flagSource(); }
     public InMemoryProvisionLogger provisionLogger() { return provisionLogger; }
     public Node node(String hostname) { return nodeRepository.nodes().node(hostname).get(); }
 
     public int decideSize(Capacity capacity, ApplicationId application) {
-        return capacityPolicies.applyOn(capacity, application, false).minResources().nodes();
+        return nodeRepository.capacityPoliciesFor(application).applyOn(capacity, false).minResources().nodes();
     }
 
     public Node patchNode(Node node, UnaryOperator<Node> patcher) {
