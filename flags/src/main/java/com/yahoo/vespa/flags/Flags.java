@@ -431,7 +431,7 @@ public class Flags {
             "Takes effect immediately");
 
     public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
-            "persistence-thread-max-feed-op-batch-size", 1,
+            "persistence-thread-max-feed-op-batch-size", 64,
             List.of("vekterli"), "2024-04-12", "2025-01-01",
             "Maximum number of enqueued feed operations (put/update/remove) bound "+
             "towards the same bucket that can be async dispatched as part of the " +
@@ -471,6 +471,12 @@ public class Flags {
             "legacy feed behavior is used.",
             "Takes effect immediately",
             INSTANCE_ID);
+
+    public static final UnboundBooleanFlag HUBSPOT_SYNC_CONTACTS = defineFeatureFlag(
+            "hubspot-sync-contacts", false,
+            List.of("bjorncs"), "2024-05-27", "2025-01-01",
+            "Whether to sync contacts to HubSpot",
+            "Takes effect immediately");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
