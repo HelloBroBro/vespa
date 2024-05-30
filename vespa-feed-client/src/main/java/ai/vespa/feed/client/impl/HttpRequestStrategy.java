@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +37,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.FINER;
 import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
@@ -334,6 +336,7 @@ class HttpRequestStrategy implements RequestStrategy {
 
         private final Object monitor = new Object();
         private final ClusterFactory clusterFactory;
+        private final ExecutorService executor = Executors.newSingleThreadExecutor();
         private AtomicLong inflight = new AtomicLong(0);
         private Cluster delegate;
 
@@ -346,15 +349,18 @@ class HttpRequestStrategy implements RequestStrategy {
         public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
             synchronized (monitor) {
                 AtomicLong usedCounter = inflight;
-                Cluster usedCluster = delegate;
                 usedCounter.incrementAndGet();
-                delegate.dispatch(request, vessel);
-                vessel.whenComplete((__, ___) -> {
-                    synchronized (monitor) {
-                        if (usedCounter.decrementAndGet() == 0 && usedCluster != delegate)
-                            usedCluster.close();
-                    }
-                });
+                Cluster usedCluster = delegate;
+                usedCluster.dispatch(request, vessel);
+                vessel.whenCompleteAsync((__, ___) -> {
+                                             synchronized (monitor) {
+                                                 if (usedCounter.decrementAndGet() == 0 && usedCluster != delegate) {
+                                                     log.log(INFO, "Closing old HTTP client");
+                                                     usedCluster.close();
+                                                 }
+                                             }
+                                         },
+                                         executor);
             }
         }
 
@@ -362,6 +368,15 @@ class HttpRequestStrategy implements RequestStrategy {
         public void close() {
             synchronized (monitor) {
                 delegate.close();
+                executor.shutdown();
+                try {
+                    if ( ! executor.awaitTermination(1, TimeUnit.MINUTES))
+                        log.log(WARNING, "Failed shutting down HTTP client within 1 minute");
+                }
+                catch (InterruptedException e) {
+                    log.log(WARNING, "Interrupted waiting for HTTP client to shut down");
+                    Thread.currentThread().interrupt();
+                }
             }
         }
 
@@ -372,6 +387,7 @@ class HttpRequestStrategy implements RequestStrategy {
 
         void reset() throws IOException {
             synchronized (monitor) {
+                log.log(INFO, "Replacing underlying HTTP client to attempt recovery");
                 delegate = clusterFactory.create();
                 inflight = new AtomicLong(0);
             }
