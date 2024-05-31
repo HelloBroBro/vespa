@@ -32,7 +32,7 @@ org.apache.maven.resolver:maven-resolver-impl:${maven-resolver.vespa.version}
 org.apache.maven.resolver:maven-resolver-named-locks:${maven-resolver.vespa.version}
 org.apache.maven.resolver:maven-resolver-spi:${maven-resolver.vespa.version}
 org.apache.maven.resolver:maven-resolver-util:${maven-resolver.vespa.version}
-org.apache.maven.shared:maven-dependency-tree:3.2.1
+org.apache.maven.shared:maven-dependency-tree:${maven-dependency-tree.vespa.version}
 org.apache.maven.shared:maven-shared-utils:${maven-shared-utils.vespa.version}
 org.apache.maven:maven-api-meta:${maven-xml-impl.vespa.version}
 org.apache.maven:maven-api-xml:${maven-xml-impl.vespa.version}
@@ -59,8 +59,6 @@ org.codehaus.plexus:plexus-sec-dispatcher:2.0
 org.codehaus.plexus:plexus-utils:${plexus-utils.vespa.version}
 org.codehaus.plexus:plexus-xml:${plexus-xml.vespa.version}
 org.codehaus.woodstox:stax2-api:${stax2-api.vespa.version}
-org.eclipse.aether:aether-api:1.0.0.v20140518
-org.eclipse.aether:aether-util:1.0.0.v20140518
 org.eclipse.sisu:org.eclipse.sisu.inject:${eclipse-sisu.vespa.version}
 org.eclipse.sisu:org.eclipse.sisu.plexus:${eclipse-sisu.vespa.version}
 org.hamcrest:hamcrest-core:${hamcrest.vespa.version}
