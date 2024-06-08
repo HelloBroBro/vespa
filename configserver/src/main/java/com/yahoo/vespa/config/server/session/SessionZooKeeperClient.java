@@ -24,6 +24,7 @@ import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.filedistribution.AddFileInterface;
 import com.yahoo.vespa.config.server.filedistribution.MockFileManager;
+import com.yahoo.vespa.config.server.session.Session.Status;
 import com.yahoo.vespa.config.server.tenant.CloudAccountSerializer;
 import com.yahoo.vespa.config.server.tenant.DataplaneTokenSerializer;
 import com.yahoo.vespa.config.server.tenant.OperatorCertificateSerializer;
@@ -235,7 +236,11 @@ public class SessionZooKeeperClient {
     public Version readVespaVersion() {
         Optional<byte[]> data = curator.getData(versionPath());
         // TODO: Empty version should not be possible any more - verify and remove
-        return data.map(d -> new Version(Utf8.toString(d))).orElse(Vtag.currentVersion);
+        return data.map(d -> new Version(Utf8.toString(d)))
+                   .orElseGet(() -> {
+                       log.log(Level.WARNING, "No Vespa version found for session " + sessionId + ", returning current Vtag version");
+                       return Vtag.currentVersion;
+                   });
     }
 
     public Optional<DockerImage> readDockerImageRepository() {
@@ -249,7 +254,15 @@ public class SessionZooKeeperClient {
 
     public Instant readCreateTime() {
         Optional<byte[]> data = curator.getData(getCreateTimePath());
-        return data.map(d -> Instant.ofEpochSecond(Long.parseLong(Utf8.toString(d)))).orElse(Instant.EPOCH);
+        return data.map(d -> Instant.ofEpochSecond(Long.parseLong(Utf8.toString(d))))
+                   .or(() -> {
+                       log.log(Level.WARNING, "No creation time found for session " + sessionId + ", returning session path ctime");
+                       return curator.getStat(sessionPath).map(s -> Instant.ofEpochMilli(s.getCtime()));
+                   })
+                   .orElseGet(() -> {
+                       log.log(Level.WARNING, "No ZK ctime found for session " + sessionId + ", returning epoch");
+                       return Instant.EPOCH;
+                   });
     }
 
     public Instant readActivatedTime() {
@@ -305,7 +318,6 @@ public class SessionZooKeeperClient {
             var bytes = uncheck(() -> SlimeUtils.toJsonBytes(TenantSecretStoreSerializer.toSlime(tenantSecretStores)));
             curator.set(tenantSecretStorePath(), bytes);
         }
-
     }
 
     public List<TenantSecretStore> readTenantSecretStores() {
@@ -361,7 +373,10 @@ public class SessionZooKeeperClient {
     public ActivationTriggers readActivationTriggers() {
         return curator.getData(sessionPath.append(ACTIVATION_TRIGGERS_PATH))
                       .map(ActivationTriggersSerializer::fromJson)
-                      .orElse(ActivationTriggers.empty());
+                      .orElseGet(() -> {
+                          log.log(Level.WARNING, "No activation triggers found for session " + sessionId + ", returning empty");
+                          return ActivationTriggers.empty();
+                      });
     }
 
     /**
@@ -373,7 +388,7 @@ public class SessionZooKeeperClient {
         CuratorTransaction transaction = new CuratorTransaction(curator);
         transaction.add(CuratorOperations.create(sessionPath.getAbsolute()));
         transaction.add(CuratorOperations.create(sessionPath.append(UPLOAD_BARRIER).getAbsolute()));
-        transaction.add(createWriteStatusTransaction(Session.Status.NEW).operations());
+        transaction.add(CuratorOperations.create(sessionStatusPath.getAbsolute(), Utf8.toBytes(Status.NEW.name())));
         transaction.add(CuratorOperations.create(getCreateTimePath().getAbsolute(), Utf8.toBytes(String.valueOf(createTime.getEpochSecond()))));
         transaction.commit();
     }
