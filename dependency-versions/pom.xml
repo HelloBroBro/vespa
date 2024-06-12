@@ -68,7 +68,7 @@
         <assertj.vespa.version>3.26.0</assertj.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <aws-sdk.vespa.version>1.12.739</aws-sdk.vespa.version>
+        <aws-sdk.vespa.version>1.12.740</aws-sdk.vespa.version>
         <athenz.vespa.version>1.11.59</athenz.vespa.version>
         <!-- Athenz END -->
 
@@ -96,7 +96,7 @@
         <dropwizard.metrics.vespa.version>4.2.26</dropwizard.metrics.vespa.version> <!-- ZK 3.9.1 requires this -->
         <eclipse-angus.vespa.version>2.0.2</eclipse-angus.vespa.version>
         <eclipse-collections.vespa.version>11.1.0</eclipse-collections.vespa.version>
-        <eclipse-sisu.vespa.version>0.9.0.M2</eclipse-sisu.vespa.version>
+        <eclipse-sisu.vespa.version>0.9.0.M3</eclipse-sisu.vespa.version>
         <failureaccess.vespa.version>1.0.2</failureaccess.vespa.version>
         <felix.vespa.version>7.0.5</felix.vespa.version>
         <felix.log.vespa.version>1.3.0</felix.log.vespa.version>
@@ -126,7 +126,7 @@
         <mimepull.vespa.version>1.10.0</mimepull.vespa.version>
         <mockito.vespa.version>5.12.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>
-        <netty.vespa.version>4.1.110.Final</netty.vespa.version>
+        <netty.vespa.version>4.1.111.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.65.Final</netty-tcnative.vespa.version>
         <onnxruntime.vespa.version>1.18.0</onnxruntime.vespa.version>
         <opennlp.vespa.version>2.3.3</opennlp.vespa.version>
