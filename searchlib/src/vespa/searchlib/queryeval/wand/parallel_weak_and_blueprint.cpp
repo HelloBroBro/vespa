@@ -20,7 +20,8 @@ ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(FieldSpecBase field, uint32_t
       _scoresAdjustFrequency(wand::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY),
       _layout(),
       _weights(),
-      _terms()
+      _terms(),
+      _matching_phase(MatchingPhase::FIRST_PHASE)
 {
 }
 
@@ -87,11 +88,12 @@ ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
                            childState.estimate().estHits,
                            childState.field(0).resolve(*childrenMatchData));
     }
+    bool readonly_scores_heap = (_matching_phase != MatchingPhase::FIRST_PHASE);
     return ParallelWeakAndSearch::create(terms,
                                          ParallelWeakAndSearch::MatchParams(*_scores, _scoreThreshold, _thresholdBoostFactor,
                                                                             _scoresAdjustFrequency, get_docid_limit()),
                                          ParallelWeakAndSearch::RankParams(*tfmda[0],std::move(childrenMatchData)),
-                                         strict());
+                                         strict(), readonly_scores_heap);
 }
 
 std::unique_ptr<SearchIterator>
@@ -112,6 +114,27 @@ bool
 ParallelWeakAndBlueprint::always_needs_unpack() const
 {
     return true;
+}
+
+void
+ParallelWeakAndBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept
+{
+    _matching_phase = matching_phase;
+    if (matching_phase != MatchingPhase::FIRST_PHASE) {
+        /*
+         * During first phase matching, the scores heap is adjusted by
+         * the iterators. The minimum score is increased when the
+         * scores heap is full while handling a matching document with
+         * a higher score than the worst existing one.
+         *
+         * During later matching phases, only the original minimum
+         * score is used, and the heap is not updated by the
+         * iterators. This ensures that all documents considered a hit
+         * by the first phase matching will also be considered as hits
+         * by the later matching phases.
+         */
+        _scores->set_min_score(_scoreThreshold);
+    }
 }
 
 void
