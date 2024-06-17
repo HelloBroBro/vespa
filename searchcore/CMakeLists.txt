@@ -5,8 +5,8 @@ vespa_define_module(
     vespalog
     vespalib
     metrics
-    config_cloudconfig
-    configdefinitions
+    vespa_config
+    vespa_configdefinitions
     document
     searchlib
     messagebus

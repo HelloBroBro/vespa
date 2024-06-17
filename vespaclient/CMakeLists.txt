@@ -2,8 +2,8 @@
 vespa_define_module(
     DEPENDS
     vespadefaults
-    configdefinitions
-    config_cloudconfig
+    vespa_configdefinitions
+    vespa_config
     vespalog
     document
     documentapi

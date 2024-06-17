@@ -2,13 +2,13 @@
 vespa_define_module(
     DEPENDS
     vespalog
-    config_cloudconfig
+    vespa_config
     vespalib
     fnet
     document
     slobrok
     messagebus
-    configdefinitions
+    vespa_configdefinitions
     vdslib
 
     LIBS

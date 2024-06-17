@@ -3,8 +3,8 @@ vespa_define_module(
     DEPENDS
     vespadefaults
     metrics
-    config_cloudconfig
-    configdefinitions
+    vespa_config
+    vespa_configdefinitions
     vespalog
     messagebus
     documentapi

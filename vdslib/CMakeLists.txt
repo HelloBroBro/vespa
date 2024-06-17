@@ -3,8 +3,8 @@ vespa_define_module(
     DEPENDS
     vespalog
     vespalib
-    config_cloudconfig
-    configdefinitions
+    vespa_config
+    vespa_configdefinitions
     document
 
     LIBS
