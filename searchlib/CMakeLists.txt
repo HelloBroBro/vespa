@@ -4,10 +4,10 @@ vespa_define_module(
     vespalog
     vespalib
     vespaeval
-    fnet
+    vespa_fnet
     vespa_configdefinitions
     metrics
-    document
+    vespa_document
     vespa_config
 
     EXTERNAL_DEPENDS

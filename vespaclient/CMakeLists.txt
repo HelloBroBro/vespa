@@ -5,8 +5,8 @@ vespa_define_module(
     vespa_configdefinitions
     vespa_config
     vespalog
-    document
-    documentapi
+    vespa_document
+    vespa_documentapi
     vespalib
 
     LIBS

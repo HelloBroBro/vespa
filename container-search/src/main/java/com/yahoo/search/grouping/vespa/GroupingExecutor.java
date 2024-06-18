@@ -15,6 +15,7 @@ import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.GroupingValidator;
 import com.yahoo.search.grouping.result.Group;
 import com.yahoo.search.grouping.result.RootGroup;
+import com.yahoo.search.query.Trace;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -98,29 +99,33 @@ public class GroupingExecutor extends Searcher {
         return result;
     }
 
+    private String extractSummaryClass(Hit hit, String summaryClass) {
+        Object metaData = hit.getSearcherSpecificMetaData(this);
+        if (metaData instanceof String metaDataString) {
+            // Use the summary class specified by grouping, set in HitConverter, for the first fill request
+            // after grouping. This assumes the first fill request is using the default summary class,
+            // which may be a fragile assumption. But currently we cannot do better because the difference
+            // between explicit and implicit summary class in fill is erased by the Execution.
+            //
+            // We reset the summary class here such that following fill calls will execute with the
+            // summary class they specify
+            hit.setSearcherSpecificMetaData(this, null);
+            return metaDataString;
+        }
+        return summaryClass;
+    }
+
     @Override
     public void fill(Result result, String summaryClass, Execution execution) {
         Map<String, Result> summaryMap = new HashMap<>();
         for (Iterator<Hit> it = result.hits().unorderedDeepIterator(); it.hasNext(); ) {
             Hit hit = it.next();
-            Object metaData = hit.getSearcherSpecificMetaData(this);
-            if (metaData instanceof String) {
-                // Use the summary class specified by grouping, set in HitConverter, for the first fill request
-                // after grouping. This assumes the first fill request is using the default summary class,
-                // which may be a fragile assumption. But currently we cannot do better because the difference
-                // between explicit and implicit summary class in fill is erased by the Execution.
-                // 
-                // We reset the summary class here such that following fill calls will execute with the
-                // summary class they specify
-                summaryClass = (String) metaData;
-                hit.setSearcherSpecificMetaData(this, null);
-            }
-            Result summaryResult = summaryMap.get(summaryClass);
-            if (summaryResult == null) {
-                summaryResult = new Result(result.getQuery());
-                summaryMap.put(summaryClass, summaryResult);
-            }
+            Result summaryResult = summaryMap.computeIfAbsent(extractSummaryClass(hit, summaryClass), key -> new Result(result.getQuery()));
             summaryResult.hits().add(hit);
+        }
+        Trace trace = result.getQuery().getTrace();
+        if (trace.isTraceable(2)) {
+            trace.trace("GroupingExecutor.fill(" + summaryClass + ") = {" + summaryMap.keySet() + "}", 2);
         }
         for (Map.Entry<String, Result> entry : summaryMap.entrySet()) {
             Result res = entry.getValue();
