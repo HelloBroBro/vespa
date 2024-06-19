@@ -6,7 +6,7 @@ vespa_define_module(
     vespa_config
     vespa_configdefinitions
     vespalog
-    messagebus
+    vespa_messagebus
     vespa_documentapi
     vespa_document
     vespalib
@@ -53,7 +53,7 @@ vespa_define_module(
     src/vespa/storageapi/messageapi
 
     TEST_DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
     TEST_EXTERNAL_DEPENDS
     ${VESPA_ATOMIC_LIB}
 

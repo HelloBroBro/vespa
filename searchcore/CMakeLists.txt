@@ -9,7 +9,7 @@ vespa_define_module(
     vespa_configdefinitions
     vespa_document
     searchlib
-    messagebus
+    vespa_messagebus
     persistence
     searchsummary
     fileacquirer
@@ -159,7 +159,7 @@ vespa_define_module(
     src/tests/index/index_disk_layout
 
     TEST_DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
 )
 
 vespa_install_script(src/apps/vespa-remove-indexes/vespa-remove-index.sh vespa-remove-index bin)

@@ -7,7 +7,7 @@ vespa_define_module(
     vespa_fnet
     vespa_document
     slobrok
-    messagebus
+    vespa_messagebus
     vespa_configdefinitions
     vdslib
 
@@ -18,7 +18,7 @@ vespa_define_module(
     src/vespa/documentapi/messagebus/policies
 
     TEST_DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
 
     TESTS
     src/tests/messagebus
