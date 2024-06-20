@@ -2,7 +2,7 @@
 vespa_define_module(
     DEPENDS
     vespadefaults
-    metrics
+    vespa_metrics
     vespa_config
     vespa_configdefinitions
     vespalog
@@ -11,7 +11,7 @@ vespa_define_module(
     vespa_document
     vespalib
     vdslib
-    persistence
+    vespa_persistence
 
     EXTERNAL_DEPENDS
     ${VESPA_GLIBC_RT_LIB}
