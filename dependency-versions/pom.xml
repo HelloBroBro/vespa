@@ -147,8 +147,8 @@
         <surefire.vespa.version>3.3.0</surefire.vespa.version>
         <velocity.vespa.version>2.3</velocity.vespa.version>
         <velocity.tools.vespa.version>3.1</velocity.tools.vespa.version>
-        <wiremock.vespa.version>3.6.0</wiremock.vespa.version>
-        <woodstox.vespa.version>6.6.2</woodstox.vespa.version>
+        <wiremock.vespa.version>3.7.0</wiremock.vespa.version>
+        <woodstox.vespa.version>6.7.0</woodstox.vespa.version>
         <stax2-api.vespa.version>4.2.2</stax2-api.vespa.version>
         <xerces.vespa.version>2.12.2</xerces.vespa.version>
         <zero-allocation-hashing.vespa.version>0.16</zero-allocation-hashing.vespa.version>
@@ -171,7 +171,7 @@
         <maven-bundle-plugin.vespa.version>5.1.9</maven-bundle-plugin.vespa.version>
         <maven-compiler-plugin.vespa.version>3.13.0</maven-compiler-plugin.vespa.version>
         <maven-core.vespa.version>3.9.8</maven-core.vespa.version>
-        <maven-dependency-plugin.vespa.version>3.7.0</maven-dependency-plugin.vespa.version>
+        <maven-dependency-plugin.vespa.version>3.7.1</maven-dependency-plugin.vespa.version>
         <maven-deploy-plugin.vespa.version>3.1.2</maven-deploy-plugin.vespa.version>
         <maven-enforcer-plugin.vespa.version>3.5.0</maven-enforcer-plugin.vespa.version>
         <maven-failsafe-plugin.vespa.version>3.3.0</maven-failsafe-plugin.vespa.version>
