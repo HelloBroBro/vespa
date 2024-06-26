@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "document_frequency.h"
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/table.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
@@ -10,6 +11,7 @@
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/vespalib/util/string_hash.h>
 #include <limits>
+#include <optional>
 
 namespace search::features::util {
 
@@ -118,19 +120,12 @@ feature_t lookupSignificance(const search::fef::IQueryEnvironment& env, const se
 feature_t lookupSignificance(const search::fef::IQueryEnvironment & env, uint32_t termId, feature_t fallback = 0.0f);
 
 /**
- * Returns the Robertson-Sparck-Jones weight based on the given document count
- * (number of documents containing the term) and the number of documents in the corpus.
- * This weight is a variant of inverse document frequency.
- */
-double getRobertsonSparckJonesWeight(double docCount, double docsInCorpus);
-
-/**
  * Returns the significance based on the given scaled number of documents containing the term.
  *
  * @param docFreq The scaled number of documents containing the term.
  * @return        The significance.
  */
-feature_t getSignificance(double docFreq);
+feature_t calculate_legacy_significance(double docFreq);
 
 /**
  * Returns the significance based on max known frequency of the term
@@ -138,7 +133,7 @@ feature_t getSignificance(double docFreq);
  * @param  termData Data for the term
  * @return          The significance.
  */
-feature_t getSignificance(const search::fef::ITermData &termData);
+feature_t calculate_legacy_significance(const search::fef::ITermData& termData);
 
 /**
  * Lookups a table by using the properties and the table manager in the given index environment.
@@ -197,5 +192,11 @@ getTermFieldHandle(const search::fef::IQueryEnvironment &env, uint32_t termId, u
  **/
 const search::fef::ITermData *
 getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string &label);
+
+std::optional<DocumentFrequency>
+lookup_document_frequency(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& term);
+
+std::optional<DocumentFrequency>
+lookup_document_frequency(const search::fef::IQueryEnvironment& env, uint32_t termId);
 
 }

@@ -18,6 +18,9 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.Objects;
+import java.util.logging.Logger;
 
 /**
  * Default implementation of {@link SignificanceModelRegistry}.
@@ -26,6 +29,8 @@ import java.util.Optional;
  * @author MariusArhaug
  */
 public class DefaultSignificanceModelRegistry implements SignificanceModelRegistry {
+
+    private static final Logger log = Logger.getLogger(DefaultSignificanceModelRegistry.class.getName());
 
     private final Map<Language, SignificanceModel> models;
 
@@ -45,6 +50,7 @@ public class DefaultSignificanceModelRegistry implements SignificanceModelRegist
     }
 
     public void addModel(Path path) {
+        log.fine(() -> "Loading model from " + path);
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             InputStream in = path.toString().endsWith(".zst") ?
@@ -53,9 +59,16 @@ public class DefaultSignificanceModelRegistry implements SignificanceModelRegist
 
             SignificanceModelFile file = objectMapper.readValue(in, SignificanceModelFile.class);
             for (var pair : file.languages().entrySet()) {
-                this.models.put(
-                        Language.fromLanguageTag(pair.getKey()),
-                        new DefaultSignificanceModel(pair.getValue(), file.id()));
+
+                var languagesStr = pair.getKey();
+                log.fine(() -> "Found model for languages '%s'".formatted(languagesStr));
+                String[] languageTags = languagesStr.split(",");
+
+                for (var languageTag : languageTags) {
+                    var language = Language.fromLanguageTag(languageTag);
+                    log.fine(() -> "Adding model for language %s with id %s".formatted(language, file.id()));
+                    this.models.put(language, new DefaultSignificanceModel(pair.getValue(), file.id()));
+                }
             }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to load model from " + path, e);

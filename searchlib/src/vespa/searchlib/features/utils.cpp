@@ -110,16 +110,10 @@ lookupSignificance(const search::fef::IQueryEnvironment& env, uint32_t termId, f
     return lookupSignificance(env, *term, fallback);
 }
 
-double
-getRobertsonSparckJonesWeight(double docCount, double docsInCorpus)
-{
-    return std::log((docsInCorpus - docCount + 0.5)/(docCount + 0.5));
-}
-
 static const double N = 1000000.0;
 
 feature_t
-getSignificance(double docFreq)
+calculate_legacy_significance(double docFreq)
 {
     if (docFreq < (1.0/N)) {
       docFreq = 1.0/N;
@@ -129,18 +123,10 @@ getSignificance(double docFreq)
     }
     double d = std::log(docFreq)/std::log(1.0/N);
     return 0.5 + 0.5 * d;
-#if 0
-    double n = docFreq * N;
-    n = (n == 0) ? 1 : (n > N ? N : n);
-    double a = getRobertsonSparckJonesWeight(1, N + 1);
-    double b = getRobertsonSparckJonesWeight(N + 1, N + 1);
-    double w = getRobertsonSparckJonesWeight(n, N + 1);
-    return ((w - b)/(a - b));
-#endif
 }
 
 feature_t
-getSignificance(const search::fef::ITermData& termData)
+calculate_legacy_significance(const search::fef::ITermData& termData)
 {
     using FRA = search::fef::ITermFieldRangeAdapter;
     double df = 0;
@@ -148,8 +134,8 @@ getSignificance(const search::fef::ITermData& termData)
         df = std::max(df, iter.get().getDocFreq());
     }
 
-    feature_t signif = getSignificance(df);
-    LOG(debug, "getSignificance %e %f [ %e %f ] = %e", df, df, df * N, df * N, signif);
+    feature_t signif = calculate_legacy_significance(df);
+    LOG(debug, "calculate_legacy_significance %e %f [ %e %f ] = %e", df, df, df * N, df * N, signif);
     return signif;
 }
 
@@ -193,6 +179,34 @@ getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string
     Issue::report("Query label '%s' was attached to non-existing unique id: '%s'",
                   label.c_str(), p.get().c_str());
     return 0;
+}
+
+std::optional<DocumentFrequency>
+lookup_document_frequency(const search::fef::IQueryEnvironment& env, const ITermData& term)
+{
+    vespalib::asciistream os;
+    auto unique_id = term.getUniqueId();
+    if (unique_id != 0) {
+        os << "vespa.term." << unique_id << ".docfreq";
+        Property p = env.getProperties().lookup(os.str());
+        if (p.size() == 2) {
+            // we have a defined document frequency
+            auto document_frequency = strToNum<uint64_t>(p.getAt(0));
+            auto document_count = strToNum<uint64_t>(p.getAt(1));
+            return DocumentFrequency(document_frequency, document_count);
+        }
+    }
+    return {};
+}
+
+std::optional<DocumentFrequency>
+lookup_document_frequency(const search::fef::IQueryEnvironment& env, uint32_t termId)
+{
+    const ITermData* term = env.getTerm(termId);
+    if (term == nullptr) {
+        return {};
+    }
+    return lookup_document_frequency(env, *term);
 }
 
 }
