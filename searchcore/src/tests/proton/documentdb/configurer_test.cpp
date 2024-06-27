@@ -69,6 +69,7 @@ using Configurer = SearchableDocSubDBConfigurer;
 using ConfigurerUP = std::unique_ptr<SearchableDocSubDBConfigurer>;
 using DocumenttypesConfigSP = proton::DocumentDBConfig::DocumenttypesConfigSP;
 
+namespace {
 const vespalib::string BASE_DIR("baseDir");
 const vespalib::string DOC_TYPE("invalid");
 
@@ -146,7 +147,7 @@ ViewSet::~ViewSet() = default;
 
 struct EmptyConstantValueFactory : public vespalib::eval::ConstantValueFactory {
     vespalib::eval::ConstantValue::UP create(const vespalib::string &, const vespalib::string &) const override {
-        return vespalib::eval::ConstantValue::UP(nullptr);
+        return {};
     }
 };
 
@@ -178,13 +179,13 @@ struct Fixture
                      const DocumentDBConfig& old_config_snapshot,
                      const ReconfigParams& reconfig_params,
                      IDocumentDBReferenceResolver& resolver,
-                     SerialNum serial_num);
+                     SerialNum serial_num) const;
     IReprocessingInitializer::UP reconfigure(const DocumentDBConfig& new_config_snapshot,
                                              const DocumentDBConfig& old_config_snapshot,
                                              const ReconfigParams& reconfig_params,
                                              IDocumentDBReferenceResolver& resolver,
                                              uint32_t docid_limit,
-                                             SerialNum serial_num);
+                                             SerialNum serial_num) const;
 };
 
 Fixture::Fixture()
@@ -204,7 +205,9 @@ Fixture::Fixture()
     _configurer = std::make_unique<Configurer>(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
                                                _constantValueFactory, _clock.nowRef(), "test", 0);
 }
-Fixture::~Fixture() = default;
+Fixture::~Fixture() {
+    std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
+}
 
 void
 Fixture::initViewSet(ViewSet &views)
@@ -255,7 +258,7 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
                      const DocumentDBConfig& old_config_snapshot,
                      const ReconfigParams& reconfig_params,
                      IDocumentDBReferenceResolver& resolver,
-                     SerialNum serial_num)
+                     SerialNum serial_num) const
 {
     EXPECT_FALSE(reconfig_params.shouldAttributeManagerChange());
     uint32_t docid_limit = 1;
@@ -271,7 +274,7 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
                      const ReconfigParams& reconfig_params,
                      IDocumentDBReferenceResolver& resolver,
                      uint32_t docid_limit,
-                     SerialNum serial_num)
+                     SerialNum serial_num) const
 {
     AttributeCollectionSpecFactory attr_spec_factory(AllocStrategy(), false);
     auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
@@ -279,7 +282,7 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
     return _configurer->reconfigure(new_config_snapshot, old_config_snapshot, reconfig_params, resolver, *prepared_reconfig, serial_num);
 }
 
-using MySummaryAdapter = test::MockSummaryAdapter;
+using MySummaryAdapter = proton::test::MockSummaryAdapter;
 
 struct MyFastAccessFeedView
 {
@@ -293,56 +296,51 @@ struct MyFastAccessFeedView
     std::shared_ptr<PendingLidTrackerBase> _pendingLidsForCommit;
     VarHolder<FastAccessFeedView::SP> _feedView;
 
-    explicit MyFastAccessFeedView(IThreadingService &writeService)
-        : _fileHeaderContext(),
-          _docIdLimit(0),
-          _writeService(writeService),
-          _hwInfo(),
-          _dmsc(),
-          _gidToLidChangeHandler(make_shared<DummyGidToLidChangeHandler>()),
-          _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
-          _feedView()
-    {
-        init();
-    }
-
+    explicit MyFastAccessFeedView(IThreadingService &writeService) __attribute__((noinline));
     ~MyFastAccessFeedView();
 
-    void init() {
-        MySummaryAdapter::SP summaryAdapter = std::make_shared<MySummaryAdapter>();
-        Schema::SP schema = std::make_shared<Schema>();
-        _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>());
-        std::shared_ptr<const DocumentTypeRepo> repo = createRepo();
-        StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, repo,
-                                                _pendingLidsForCommit, *_gidToLidChangeHandler, _writeService);
-        StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);
-        auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(),
-                                                 _fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
-                                                 _writeService.field_writer(), _writeService.shared(), _hwInfo);
-        auto writer = std::make_shared<AttributeWriter>(mgr);
-        FastAccessFeedView::Context fastUpdateCtx(writer, _docIdLimit);
-        _feedView.set(std::make_shared<FastAccessFeedView>(std::move(storeOnlyCtx), params, fastUpdateCtx));
-    }
+    void init() __attribute__((noinline));
 };
 
+MyFastAccessFeedView::MyFastAccessFeedView(IThreadingService &writeService)
+    : _fileHeaderContext(),
+      _docIdLimit(0),
+      _writeService(writeService),
+      _hwInfo(),
+      _dmsc(),
+      _gidToLidChangeHandler(make_shared<DummyGidToLidChangeHandler>()),
+      _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
+      _feedView()
+{
+    init();
+}
+
 MyFastAccessFeedView::~MyFastAccessFeedView() = default;
+
+void
+MyFastAccessFeedView::init() {
+    MySummaryAdapter::SP summaryAdapter = std::make_shared<MySummaryAdapter>();
+    Schema::SP schema = std::make_shared<Schema>();
+    _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>());
+    std::shared_ptr<const DocumentTypeRepo> repo = createRepo();
+    StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, repo,
+                                            _pendingLidsForCommit, *_gidToLidChangeHandler, _writeService);
+    StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);
+    auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(),
+                                             _fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
+                                             _writeService.field_writer(), _writeService.shared(), _hwInfo);
+    auto writer = std::make_shared<AttributeWriter>(mgr);
+    FastAccessFeedView::Context fastUpdateCtx(writer, _docIdLimit);
+    _feedView.set(std::make_shared<FastAccessFeedView>(std::move(storeOnlyCtx), params, fastUpdateCtx));
+}
 
 struct FastAccessFixture
 {
     TransportAndExecutorService  _service;
     MyFastAccessFeedView          _view;
     FastAccessDocSubDBConfigurer _configurer;
-    FastAccessFixture()
-        : _service(1),
-          _view(_service.write()),
-          _configurer(_view._feedView, "test")
-    {
-        std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
-        std::filesystem::create_directory(std::filesystem::path(BASE_DIR));
-    }
-    ~FastAccessFixture() {
-        _service.shutdown();
-    }
+    FastAccessFixture() __attribute__((noinline));
+    ~FastAccessFixture() __attribute__((noinline));
 
     IReprocessingInitializer::UP
     reconfigure(const DocumentDBConfig& new_config_snapshot,
@@ -350,6 +348,19 @@ struct FastAccessFixture
                 uint32_t docid_limit,
                 SerialNum serial_num);
 };
+
+FastAccessFixture::FastAccessFixture()
+    : _service(1),
+      _view(_service.write()),
+      _configurer(_view._feedView, "test")
+{
+    std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
+    std::filesystem::create_directory(std::filesystem::path(BASE_DIR));
+}
+FastAccessFixture::~FastAccessFixture() {
+    _service.shutdown();
+}
+
 
 IReprocessingInitializer::UP
 FastAccessFixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
@@ -367,14 +378,14 @@ FastAccessFixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
 DocumentDBConfig::SP
 createConfig()
 {
-    return test::DocumentDBConfigBuilder(0, make_shared<Schema>(), "client", DOC_TYPE).
+    return proton::test::DocumentDBConfigBuilder(0, make_shared<Schema>(), "client", DOC_TYPE).
             repo(createRepo()).build();
 }
 
 DocumentDBConfig::SP
 createConfig(const Schema::SP &schema)
 {
-    return test::DocumentDBConfigBuilder(0, schema, "client", DOC_TYPE).
+    return proton::test::DocumentDBConfigBuilder(0, schema, "client", DOC_TYPE).
             repo(createRepo()).build();
 }
 
@@ -490,6 +501,8 @@ FastAccessFeedViewComparer::FastAccessFeedViewComparer(FastAccessFeedView::SP ol
       _new(std::move(new_))
 {}
 FastAccessFeedViewComparer::~FastAccessFeedViewComparer() = default;
+
+}
 
 TEST_F("require that we can reconfigure index searchable", Fixture)
 {
@@ -781,10 +794,4 @@ TEST("require that summary manager should change if relevant config changed")
     TEST_DO(assertSummaryManagerShouldChange(CCR().setDocumentTypeRepoChanged(true)));
     TEST_DO(assertSummaryManagerShouldChange(CCR().setStoreChanged(true)));
     TEST_DO(assertSummaryManagerShouldChange(CCR().setSchemaChanged(true)));
-}
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-    std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
 }
