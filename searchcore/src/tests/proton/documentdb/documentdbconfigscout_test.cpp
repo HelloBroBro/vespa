@@ -4,9 +4,10 @@
 #include <vespa/searchcore/proton/server/documentdbconfig.h>
 #include <vespa/searchcore/proton/server/documentdbconfigscout.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config-attributes.h>
 #include <ostream>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace document;
 using namespace proton;
@@ -37,8 +38,7 @@ std::ostream& operator<<(std::ostream& os, const AttributesConfig::Attribute::Di
 
 }
 
-namespace
-{
+namespace {
 
 DDBCSP
 getConfig(int64_t generation, const Schema::SP &schema,
@@ -395,5 +395,3 @@ TEST("Test that DocumentDBConfigScout::scout looks ahead")
     EXPECT_TRUE(assertScoutedAttributes(scoutedCfg->getAttributesConfig().
                                         attribute));
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }

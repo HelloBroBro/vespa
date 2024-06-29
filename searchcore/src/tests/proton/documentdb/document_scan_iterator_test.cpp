@@ -3,9 +3,10 @@
 #include <vespa/searchcore/proton/server/document_scan_iterator.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace document;
 using namespace proton;
@@ -80,9 +81,4 @@ TEST_F("require that only lids > lid limit are returned", Fixture)
 {
     f.add({1,2,3,4,5,6,7,8});
     assertLidSet({5,6,7,8}, f.scan(4, 4));
-}
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
 }

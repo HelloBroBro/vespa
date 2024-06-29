@@ -40,7 +40,6 @@
 #include <vespa/document/test/fieldvalue_helpers.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -48,10 +47,9 @@
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/test.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
-
-#include <vespa/log/log.h>
-LOG_SETUP("document_retriever_test");
 
 using document::ArrayFieldValue;
 using document::FieldValue;
@@ -669,5 +667,3 @@ TEST("require that fieldset can figure out their attributeness and rember it") {
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }
