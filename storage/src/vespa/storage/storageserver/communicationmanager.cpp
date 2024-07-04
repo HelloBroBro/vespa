@@ -626,7 +626,7 @@ CommunicationManager::sendDirectRPCReply(RPCRequestWrapper& request,
         // due to a higher version having been previously received.
         auto& state_reply = dynamic_cast<api::SetSystemStateReply&>(*reply);
         if (state_reply.getResult().getResult() == api::ReturnCode::REJECTED) {
-            vespalib::string err_msg = state_reply.getResult().getMessage(); // ReturnCode message is stringref
+            vespalib::string err_msg = state_reply.getResult().getMessage(); // ReturnCode message is string_view
             request.returnError(FRTE_RPC_METHOD_FAILED, err_msg.c_str());
             return;
         }
@@ -637,7 +637,7 @@ CommunicationManager::sendDirectRPCReply(RPCRequestWrapper& request,
                      activate_reply.activateVersion(), activate_reply.actualVersion());
     } else {
         request.addReturnInt(reply->getResult().getResult());
-        vespalib::stringref m = reply->getResult().getMessage();
+        std::string_view m = reply->getResult().getMessage();
         request.addReturnString(m.data(), m.size());
 
         if (reply->getType() == api::MessageType::GETNODESTATE_REPLY) {
