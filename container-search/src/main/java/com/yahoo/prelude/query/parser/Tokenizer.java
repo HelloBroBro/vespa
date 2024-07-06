@@ -111,7 +111,7 @@ public final class Tokenizer {
                 addToken(WORD, Character.toString(c), i, i + 1);
             } else if (characterClasses.isLetterOrDigit(c) || (c == '\'' && acceptApostropheAsWordCharacter(currentIndex))) {
                 i = consumeWordOrNumber(i, currentIndex);
-            } else if (Character.isWhitespace(c) || c == '\u3001' || c == '\u3002') {
+            } else if (Character.isWhitespace(c)) {
                 addToken(SPACE, " ", i, i + 1);
             } else if (c == '"' || c == '\u201C' || c == '\u201D'
                     || c == '\u201E' || c == '\u201F' || c == '\u2039'
@@ -141,6 +141,10 @@ public final class Tokenizer {
                 addToken(LSQUAREBRACKET, "[", i, i + 1);
             } else if (c == ']' || c == '\uFF3D') {
                 addToken(RSQUAREBRACKET, "]", i, i + 1);
+            } else if (c == '{') {
+                addToken(LCURLYBRACKET, "{", i, i + 1);
+            } else if (c == '}') {
+                addToken(RCURLYBRACKET, "}", i, i + 1);
             } else if (c == ';' || c == '\uFF1B') {
                 addToken(SEMICOLON, ";", i, i + 1);
             } else if (c == '>' || c == '\uFF1E') {

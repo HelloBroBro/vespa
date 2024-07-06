@@ -1492,6 +1492,7 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public java.lang.String getFieldName()",
+      "public void setIndexName(java.lang.String)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
@@ -8519,7 +8520,8 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType)",
-      "public com.yahoo.tensor.TensorType tensorType()"
+      "public com.yahoo.tensor.TensorType tensorType()",
+      "public java.lang.String toString()"
     ],
     "fields" : [ ]
   },
@@ -8564,6 +8566,7 @@
     ],
     "methods" : [
       "public com.yahoo.search.schema.Field$Type$Kind kind()",
+      "public java.lang.String toString()",
       "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
     ],
     "fields" : [ ]

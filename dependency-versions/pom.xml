@@ -62,14 +62,14 @@
         <apache.httpclient.vespa.version>4.5.14</apache.httpclient.vespa.version>
         <apache.httpcore.vespa.version>4.4.16</apache.httpcore.vespa.version>
         <apache.httpclient5.vespa.version>5.3.1</apache.httpclient5.vespa.version>
-        <apache.httpcore5.vespa.version>5.2.4</apache.httpcore5.vespa.version>
+        <apache.httpcore5.vespa.version>5.2.5</apache.httpcore5.vespa.version>
         <apiguardian.vespa.version>1.1.2</apiguardian.vespa.version>
         <asm.vespa.version>9.7</asm.vespa.version>
         <assertj.vespa.version>3.26.0</assertj.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <aws-sdk.vespa.version>1.12.753</aws-sdk.vespa.version>
-        <athenz.vespa.version>1.11.60</athenz.vespa.version>
+        <aws-sdk.vespa.version>1.12.756</aws-sdk.vespa.version>
+        <athenz.vespa.version>1.11.61</athenz.vespa.version>
         <!-- Athenz END -->
 
         <!-- WARNING: If you change curator version, you also need to update
@@ -88,7 +88,7 @@
         <commons-digester.vespa.version>3.2</commons-digester.vespa.version>
         <commons-io.vespa.version>2.16.1</commons-io.vespa.version>
         <commons-lang3.vespa.version>3.14.0</commons-lang3.vespa.version>
-        <commons-logging.vespa.version>1.3.2</commons-logging.vespa.version>  <!-- Bindings exported by jdisc through jcl-over-slf4j. -->
+        <commons-logging.vespa.version>1.3.3</commons-logging.vespa.version>  <!-- Bindings exported by jdisc through jcl-over-slf4j. -->
         <commons.math3.vespa.version>3.6.1</commons.math3.vespa.version>
         <commons-compress.vespa.version>1.26.2</commons-compress.vespa.version>
         <commons-cli.vespa.version>1.8.0</commons-cli.vespa.version>
@@ -109,7 +109,7 @@
         <java-jwt.vespa.version>4.4.0</java-jwt.vespa.version>
         <javax.annotation.vespa.version>1.2</javax.annotation.vespa.version>
         <jaxb.runtime.vespa.version>4.0.5</jaxb.runtime.vespa.version>
-        <jetty.vespa.version>11.0.21</jetty.vespa.version>
+        <jetty.vespa.version>11.0.22</jetty.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
         <jimfs.vespa.version>1.3.0</jimfs.vespa.version>
         <jna.vespa.version>5.14.0</jna.vespa.version>
@@ -136,7 +136,7 @@
         <prometheus.client.vespa.version>0.16.0</prometheus.client.vespa.version>
         <plexus-archiver.vespa.version>4.9.2</plexus-archiver.vespa.version>
         <plexus-interpolation.vespa.version>1.27</plexus-interpolation.vespa.version>
-        <plexus-io.vespa.version>3.4.2</plexus-io.vespa.version>
+        <plexus-io.vespa.version>3.5.0</plexus-io.vespa.version>
         <plexus-utils.vespa.version>4.0.1</plexus-utils.vespa.version>
         <plexus-xml.vespa.version>4.0.4</plexus-xml.vespa.version>
         <plexus-classworlds.vespa.version>2.8.0</plexus-classworlds.vespa.version>

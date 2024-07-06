@@ -21,8 +21,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.fieldsearchspec");
 
-#define DEBUGMASK 0x01
-
 using search::streaming::ConstQueryTermList;
 using search::streaming::Query;
 using search::streaming::QueryTerm;
@@ -190,7 +188,7 @@ FieldSearchSpecMap::stripNonFields(std::string_view rawIndex)
         index = std::regex_replace(index, G_array, G_empty);
         return index;
     }
-    return rawIndex;
+    return vespalib::string(rawIndex);
 }
 
 void
@@ -202,17 +200,18 @@ FieldSearchSpecMap::addFieldsFromIndex(std::string_view rawIndex, StringFieldIdT
         if (fIt != fim.end()) {
             for(FieldIdT fid : fIt->second) {
                 const FieldSearchSpec & spec = specMap().find(fid)->second;
-                LOG(debug, "buildFieldsInQuery = rawIndex='%s', index='%s'", rawIndex.data(), index.c_str());
+                LOG(debug, "buildFieldsInQuery = rawIndex='%s', index='%s'", std::string(rawIndex).c_str(), index.c_str());
                 if ((rawIndex != index) && (spec.name().find(index) == 0)) {
                     vespalib::string modIndex(rawIndex);
                     modIndex.append(spec.name().substr(index.size()));
+                    // Note: Multiple raw index names might map to the same field id
                     fieldIdMap.add(modIndex, spec.id());
                 } else {
                     fieldIdMap.add(spec.name(),spec.id());
                 }
             }
         } else {
-            LOG(warning, "No valid indexes registered for index %s", rawIndex.data());
+            LOG(warning, "No valid indexes registered for index %s", std::string(rawIndex).c_str());
         }
     }
 }

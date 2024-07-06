@@ -110,10 +110,9 @@ VespaDocumentDeserializer::readDocType(const DocumentType &guess)
     readValue<uint16_t>(_stream);  // skip version
 
     if (guess.getName() != type_name) {
-        const DocumentType *type =
-            _repo.getDocumentTypeRepo().getDocumentType(type_name);
+        const DocumentType *type = _repo.getDocumentTypeRepo().getDocumentType(type_name);
         if (!type) {
-            throw DocumentTypeNotFoundException(type_name, VESPA_STRLOC);
+            throw DocumentTypeNotFoundException(vespalib::string(type_name), VESPA_STRLOC);
         }
         return type;
     }
@@ -388,7 +387,7 @@ VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
                     }
                 } catch (const vespalib::Exception & e) {
                     LOG(warning, "Failed decoding field '%s' in legacy bodyfield -> Skipping it: %s",
-                                 entry.getName().data(), e.what());
+                                 entry.getName().c_str(), e.what());
                 }
             }
         }
