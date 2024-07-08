@@ -88,15 +88,18 @@ abstract class StructuredParser extends AbstractParser {
                 explicitIndex = true;
             else
                 indexName = this.defaultIndex;
-            setSubmodeFromIndex(indexPath + indexName, indexFacts);
+            setSubmodeFromIndex(indexName == null ? null : indexPath + indexName, indexFacts);
 
             item = number();
             if (item == null)
-                item = phrase(indexPath + indexName);
+                item = phrase(indexName == null ? null : indexPath + indexName);
             //if (item == null && indexName != null && tokens.currentIs(LCURLYBRACKET))
             //    item = sameElement(indexPath + indexName);
-            if (item == null && indexName != null && wordsAhead())
-                item = phrase(indexPath + indexName);
+            if (item == null && indexName != null) {
+                if (wordsAhead()) {
+                    item = phrase(indexName);
+                }
+            }
 
             submodes.reset();
 
@@ -163,7 +166,70 @@ abstract class StructuredParser extends AbstractParser {
         }
     }
 
-    private String indexPrefix(String indexPath) {
+    private String indexPrefix(String ignored) {
+        int position = tokens.getPosition();
+        String item = null;
+
+        try {
+            List<Token> firstWord = new ArrayList<>();
+            List<Token> secondWord = new ArrayList<>();
+
+            tokens.skip(LSQUAREBRACKET);
+
+            if ( ! tokens.currentIs(WORD) && ! tokens.currentIs(NUMBER) && ! tokens.currentIs(UNDERSCORE)) {
+                return null;
+            }
+
+            firstWord.add(tokens.next());
+
+            while (tokens.currentIsNoIgnore(UNDERSCORE)
+                   || tokens.currentIsNoIgnore(WORD)
+                   || tokens.currentIsNoIgnore(NUMBER)) {
+                firstWord.add(tokens.next());
+            }
+
+            while (tokens.currentIsNoIgnore(DOT)) {
+                secondWord.add(tokens.next());
+                if (tokens.currentIsNoIgnore(WORD) || tokens.currentIsNoIgnore(NUMBER)) {
+                    secondWord.add(tokens.next());
+                } else {
+                    return null;
+                }
+                while (tokens.currentIsNoIgnore(UNDERSCORE)
+                       || tokens.currentIsNoIgnore(WORD)
+                       || tokens.currentIsNoIgnore(NUMBER)) {
+                    secondWord.add(tokens.next());
+                }
+            }
+
+            if ( ! tokens.skipNoIgnore(COLON))
+                return null;
+
+            item = concatenate(firstWord) + concatenate(secondWord);
+
+            item = indexFacts.getCanonicName(item);
+
+            if ( ! indexFacts.isIndex(item)) { // Only if this really is an index
+                // Marker for the finally block
+                item = null;
+                return null;
+            } else {
+                if (nothingAhead(false)) {
+                    // correct index syntax, correct name, but followed by noise. Let's skip this.
+                    nothingAhead(true);
+                    position = tokens.getPosition();
+                    item = indexPrefix("");
+                }
+            }
+            return item;
+        } finally {
+            if (item == null) {
+                tokens.setPosition(position);
+            }
+        }
+    }
+
+    private String indexPrefixNEW(String indexPath) {
         int position = tokens.getPosition();
         String index = null;
 

@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/stllike/small_string.h>
 #include <algorithm>
 
-using namespace vespalib;
+using string = vespalib::vespa_string;
 
 TEST("testStringInsert") {
     string s("first string ");
@@ -337,7 +337,7 @@ TEST("testString") {
 }
 
 TEST("require that vespalib::resize works") {
-    vespalib::string s("abcdefghijk");
+    string s("abcdefghijk");
     EXPECT_EQUAL(11u, s.size());
     s.resize(5);
     EXPECT_EQUAL(5u, s.size());
@@ -361,6 +361,7 @@ TEST("require that you can format a number into a vespalib::string easily") {
     EXPECT_EQUAL(vespalib::stringify(18446744073709551615uLL), "18446744073709551615");
 }
 
+using vespalib::contains;
 TEST("require that contains works") {
     vespalib::string s("require that contains works");
     EXPECT_TRUE(contains(s, "require"));
@@ -371,6 +372,7 @@ TEST("require that contains works") {
     EXPECT_FALSE(contains(s, "not in there"));
 }
 
+using vespalib::starts_with;
 TEST("require that starts_with works") {
     vespalib::string s("require that starts_with works");
     EXPECT_TRUE(starts_with(s, "require"));
@@ -380,6 +382,7 @@ TEST("require that starts_with works") {
     EXPECT_FALSE(starts_with(s, "not in there"));
 }
 
+using vespalib::ends_with;
 TEST("require that ends_with works") {
     vespalib::string s("require that ends_with works");
     EXPECT_FALSE(ends_with(s, "require"));
@@ -426,8 +429,8 @@ TEST("test that operator<() works with std::string_view versus string") {
 }
 
 TEST("test that empty_string is shared and empty") {
-    EXPECT_TRUE(&empty_string() == &empty_string());
-    EXPECT_EQUAL(empty_string(), "");
+    EXPECT_TRUE(&vespalib::empty_string() == &vespalib::empty_string());
+    EXPECT_EQUAL(vespalib::empty_string(), "");
 }
 
 TEST("starts_with has expected semantics for small_string") {
@@ -447,6 +450,12 @@ TEST("starts_with has expected semantics for std::string_view") {
     EXPECT_TRUE(ar.starts_with("foobar"));
     EXPECT_FALSE(ar.starts_with("foobarf"));
     EXPECT_FALSE(ar.starts_with("oobar"));
+}
+
+TEST("test allowed nullptr construction - legal, but not legitimate use.") {
+    EXPECT_TRUE(vespalib::string(nullptr, 0).empty());
+    EXPECT_TRUE(std::string(nullptr, 0).empty());
+    EXPECT_TRUE(std::string_view(nullptr, 0).empty());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
