@@ -7,6 +7,7 @@ import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +27,10 @@ public class AllocationOptimizer {
     // The min and max nodes to consider when not using application supplied limits
     private static final int minimumNodes = 2; // Since this number includes redundancy it cannot be lower than 2
     private static final int maximumNodes = 150;
+
+    // A lower bound on the number of vCPUs to suggest. Flavors with fewer vCPUs than this are rarely good for
+    // anything but testing.
+    private static final int minimumSuggestedVcpus = 2;
 
     private final NodeRepository nodeRepository;
 
@@ -59,11 +64,7 @@ public class AllocationOptimizer {
         else
             limits = atLeast(minimumNodes, limits).fullySpecified(model.current().clusterSpec(), nodeRepository, model.application().id());
         List<AllocatableResources> bestAllocations = new ArrayList<>();
-        var availableRealHostResources = nodeRepository.zone().cloud().dynamicProvisioning()
-                                         ? nodeRepository.flavors().getFlavors().stream().map(Flavor::resources).toList()
-                                         : nodeRepository.nodes().list().hosts().stream().map(host -> host.flavor().resources())
-                                                         .map(hostResources -> maxResourcesOf(hostResources, model))
-                                                         .toList();
+        List<NodeResources> availableRealHostResources = availableRealHostResources(model);
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
                 if (nodes % groups != 0) continue;
@@ -103,6 +104,17 @@ public class AllocationOptimizer {
                 .toList();
     }
 
+    private List<NodeResources> availableRealHostResources(ClusterModel model) {
+        if (nodeRepository.zone().cloud().dynamicProvisioning()) {
+            return nodeRepository.flavors().getFlavors().stream().map(Flavor::resources)
+                                 .filter(r -> r.vcpu() >= minimumSuggestedVcpus)
+                                 .toList();
+        }
+        return nodeRepository.nodes().list().hosts().stream().map(host -> host.flavor().resources())
+                             .map(hostResources -> maxResourcesOf(hostResources, model))
+                             .toList();
+    }
+
     /** Returns the max resources of a host one node may allocate. */
     private NodeResources maxResourcesOf(NodeResources hostResources, ClusterModel model) {
         if (nodeRepository.exclusivity().allocation(model.clusterSpec())) return hostResources;
@@ -119,7 +131,8 @@ public class AllocationOptimizer {
                                             Limits limits,
                                             Load loadAdjustment,
                                             ClusterModel model) {
-        var loadWithTarget = model.loadAdjustmentWith(nodes, groups, loadAdjustment);
+        Instant now = nodeRepository.clock().instant();
+        var loadWithTarget = model.loadAdjustmentWith(nodes, groups, loadAdjustment, now);
 
         // Leave some headroom above the ideal allocation to avoid immediately needing to scale back up
         if (loadAdjustment.cpu() < 1 && (1.0 - loadWithTarget.cpu()) < headroomRequiredToScaleDown)
@@ -129,7 +142,7 @@ public class AllocationOptimizer {
         if (loadAdjustment.disk() < 1 && (1.0 - loadWithTarget.disk()) < headroomRequiredToScaleDown)
             loadAdjustment = loadAdjustment.withDisk(Math.min(1.0, loadAdjustment.disk() * (1.0 + headroomRequiredToScaleDown)));
 
-        loadWithTarget = model.loadAdjustmentWith(nodes, groups, loadAdjustment);
+        loadWithTarget = model.loadAdjustmentWith(nodes, groups, loadAdjustment, now);
 
         var scaled = loadWithTarget.scaled(model.current().realResources().nodeResources());
         var nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
