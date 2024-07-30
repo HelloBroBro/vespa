@@ -12,6 +12,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
@@ -143,13 +144,16 @@ public class OpenAiClient implements LanguageModel {
 
     private boolean shouldRetry(Throwable exception) {
         Throwable cause = exception.getCause();
-        if (cause instanceof SocketException && cause.getMessage().contains("Connection reset")) {
+        if (cause instanceof IOException && cause.getMessage().contains("Connection reset")) {
             return true;
         }
         if (cause instanceof HttpConnectTimeoutException) {
             return true;
         }
         if (cause instanceof HttpTimeoutException) {
+            return true;
+        }
+        if (cause instanceof EOFException) {
             return true;
         }
         return false;
