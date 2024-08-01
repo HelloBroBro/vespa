@@ -57,14 +57,6 @@ public class Flags {
             "Takes immediate effect wherever possible.",
             NODE_TYPE);
 
-    public static final UnboundBooleanFlag USE_SYSTEM_DOMAIN_FOR_AWS_CREDS = defineFeatureFlag(
-            "use-system-domain-for-aws-creds", false,
-            List.of("freva"), "2024-06-27", "2024-09-01",
-            "Whether to use system athenz domain (instead of sys.auth) when assuming role for AWS" +
-                    "temp credentials against Vespa Athenz",
-            "Takes immediate effect wherever possible.",
-            NODE_TYPE);
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
@@ -537,6 +529,12 @@ public class Flags {
             "hubspot-sync-companies", false,
             List.of("bjorncs"), "2024-07-19", "2025-01-01",
             "Whether to sync companies to HubSpot",
+            "Takes effect immediately");
+
+    public static final UnboundBooleanFlag SDM_ENABLED_PROVISIONING = defineFeatureFlag(
+            "sdm-enabled-provisioning", true,
+            List.of("olaa"), "2024-07-31", "2024-10-01",
+            "Whether to provision with SDM enabled",
             "Takes effect immediately");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
