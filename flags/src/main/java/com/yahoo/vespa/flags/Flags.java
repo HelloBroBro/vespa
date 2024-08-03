@@ -409,13 +409,13 @@ public class Flags {
 
     public static UnboundBooleanFlag CALYPSO_ENABLED = defineFeatureFlag(
             "calypso-enabled", true,
-            List.of("mortent"), "2024-02-19", "2024-08-01",
+            List.of("mortent"), "2024-02-19", "2024-09-01",
             "Whether to enable calypso for host",
             "Takes effect immediately", HOSTNAME);
 
     public static UnboundBooleanFlag ATHENZ_PROVIDER = defineFeatureFlag(
             "athenz-provider", false,
-            List.of("mortent"), "2024-02-19", "2024-08-01",
+            List.of("mortent"), "2024-02-19", "2024-09-01",
             "Whether to use athenz as node identity provider",
             "Takes effect on next identity refresh", HOSTNAME);
 
@@ -454,7 +454,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", false,
-            List.of("vekterli"), "2024-05-23", "2024-08-01",
+            List.of("vekterli"), "2024-05-23", "2024-09-01",
             "Iff true there will be an 1-1 symmetry between the replicas chosen as feed targets " +
             "for Put operations and the replica selection logic for bucket activation. If false, " +
             "legacy feed behavior is used.",
@@ -470,7 +470,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
             "enforce-strictly-increasing-cluster-state-versions", false,
-            List.of("vekterli"), "2024-06-03", "2024-08-01",
+            List.of("vekterli"), "2024-06-03", "2024-09-01",
             "Iff true, received cluster state versions that are lower than the current active " +
             "state version on the node will be explicitly rejected.",
             "Takes effect immediately",
