@@ -65,6 +65,12 @@ public class Flags {
             "Takes effect on start of config server/controller.",
             NODE_TYPE);
 
+    public static final UnboundBooleanFlag USE_VESPA_ATHENZ_ZMS = defineFeatureFlag(
+            "use-vespa-athenz-zms", false,
+            List.of("hakonhall"), "2024-08-16", "2024-10-16",
+            "Whether to communicate with Vespa Athenz ZMS instead of Yahoo Athenz ZMS in public systems.",
+            "Typically takes effect on start of config server/controller, or immediately for hosts (host-admin).");
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
@@ -546,6 +552,12 @@ public class Flags {
             List.of("hmusum"), "2024-08-14", "2024-09-14",
             "Whether to enable sysctl setting net.ipv4.tcp_shrink_window, default false",
             "Takes effect on next host-admin run");
+
+    public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME = defineLongFlag(
+            "file-download-backoff-initial-time", 1000,
+            List.of("hmusum"), "2024-08-16", "2024-09-16",
+            "Initial backoff time in milliseconds when failing to download a file reference",
+            "Takes effect on restart of Docker container");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
