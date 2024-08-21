@@ -24,6 +24,7 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <filesystem>
 #include <set>
 
@@ -199,7 +200,7 @@ set<uint32_t>
 readFusionIds(const string &dir)
 {
     set<uint32_t> ids;
-    const vespalib::string prefix("index.fusion.");
+    const std::string prefix("index.fusion.");
     std::filesystem::directory_iterator dir_scan(dir);
     for (auto& entry : dir_scan) {
         if (entry.is_directory() && entry.path().filename().string().find(prefix) == 0) {
@@ -213,7 +214,7 @@ readFusionIds(const string &dir)
     return ids;
 }
 
-vespalib::string
+std::string
 getFusionIndexName(uint32_t fusion_id)
 {
    vespalib::asciistream ost;
