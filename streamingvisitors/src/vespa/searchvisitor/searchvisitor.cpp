@@ -28,8 +28,8 @@
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/fnet/databuffer.h>
 #include <vespa/fastlib/text/normwordfolder.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <optional>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.searchvisitor");
@@ -86,7 +86,7 @@ get_search_environment_snapshot(VisitorEnvironment& v_env, const Parameters& par
         auto schema = extract_schema(params);
         return schema.empty()
             ? env.get_snapshot(std::string(search_cluster))
-            : env.get_snapshot(search_cluster + "/" + schema);
+            : env.get_snapshot(std::string(search_cluster) + "/" + std::string(schema));
     }
     return {};
 }
@@ -1320,7 +1320,8 @@ SearchVisitor::generateDocumentSummaries()
     auto& hit_collector = _rankController.getRankProcessor()->getHitCollector();
     _summaryGenerator.setDocsumCache(hit_collector);
     vdslib::SearchResult & searchResult(_queryResult->getSearchResult());
-    _summaryGenerator.getDocsumCallback().set_matching_elements_filler(std::make_unique<MatchingElementsFiller>(_fieldSearcherMap, _query, hit_collector, searchResult));
+    auto& index_env = _rankController.getRankProcessor()->get_query_env().getIndexEnvironment();
+    _summaryGenerator.getDocsumCallback().set_matching_elements_filler(std::make_unique<MatchingElementsFiller>(_fieldSearcherMap, index_env, _query, hit_collector, searchResult));
     vdslib::DocumentSummary & documentSummary(_queryResult->getDocumentSummary());
     for (size_t i(0), m(searchResult.getHitCount()); (i < m) && (i < searchResult.getWantedHitCount()); i++ ) {
         const char * docId(nullptr);
