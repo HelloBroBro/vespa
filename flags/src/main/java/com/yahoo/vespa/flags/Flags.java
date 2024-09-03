@@ -257,7 +257,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
             "enabled-horizon-dashboard", false,
-            List.of("olaa"), "2021-09-13", "2024-09-01",
+            List.of("olaa"), "2021-09-13", "2025-01-01",
             "Enable Horizon dashboard",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL
@@ -293,7 +293,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SEPARATE_METRIC_CHECK_CONFIG = defineFeatureFlag(
             "separate-metric-check-config", false,
-            List.of("olaa"), "2022-07-04", "2024-09-01",
+            List.of("olaa"), "2022-07-04", "2025-01-01",
             "Determines whether one metrics config check should be written per Vespa node",
             "Takes effect on next tick",
             HOSTNAME);
@@ -308,14 +308,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
-            List.of("olaa"), "2022-09-23", "2024-09-01",
+            List.of("olaa"), "2022-09-23", "2025-01-01",
             "Whether an OpenTelemetry collector should be enabled",
             "Takes effect at next tick",
             INSTANCE_ID);
 
     public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
             "otelcol-logs", List.of(), String.class,
-            List.of("olaa"), "2024-01-15", "2024-09-01",
+            List.of("olaa"), "2024-01-15", "2025-01-01",
             "Determines log files handled by the OpenTelemetry collector",
             "Takes effect at next tick",
             INSTANCE_ID, HOSTNAME
@@ -355,13 +355,13 @@ public class Flags {
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2024-09-01",
+            List.of("hmusum"), "2023-07-19", "2024-11-01",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2024-09-01",
+            List.of("hmusum"), "2023-07-19", "2024-11-01",
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
@@ -396,7 +396,7 @@ public class Flags {
 
     public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
             "unknown-config-definition", "warn",
-            List.of("hmusum"), "2023-09-25", "2024-09-01",
+            List.of("hmusum"), "2023-09-25", "2024-10-01",
             "How to handle user config referencing unknown config definitions. Valid values are 'warn' and 'fail'",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -410,7 +410,7 @@ public class Flags {
 
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
-            List.of("mpolden", "tokle"), "2023-10-06", "2024-09-01",
+            List.of("mpolden", "tokle"), "2023-10-06", "2025-09-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -456,7 +456,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", false,
-            List.of("vekterli"), "2024-05-23", "2024-09-01",
+            List.of("vekterli"), "2024-05-23", "2024-12-01",
             "Iff true there will be an 1-1 symmetry between the replicas chosen as feed targets " +
             "for Put operations and the replica selection logic for bucket activation. If false, " +
             "legacy feed behavior is used.",
@@ -472,7 +472,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
             "enforce-strictly-increasing-cluster-state-versions", false,
-            List.of("vekterli"), "2024-06-03", "2024-09-01",
+            List.of("vekterli"), "2024-06-03", "2024-12-01",
             "Iff true, received cluster state versions that are lower than the current active " +
             "state version on the node will be explicitly rejected.",
             "Takes effect immediately",
@@ -487,7 +487,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag LAUNCH_APPLICATION_ATHENZ_SERVICE = defineFeatureFlag(
             "launch-application-athenz-service", false,
-            List.of("jonmv"), "2024-06-11", "2024-09-01",
+            List.of("jonmv"), "2024-06-11", "2024-11-01",
             "Whether to launch an Athenz service unique to the application. Only valid in public systems!",
             "Takes effect on next deployment",
             INSTANCE_ID);
@@ -506,7 +506,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
             "distribution-config-from-cluster-controller", false,
-            List.of("vekterli"), "2024-07-01", "2024-09-01",
+            List.of("vekterli"), "2024-07-01", "2024-12-01",
             "Iff true, the cluster controller will be the authoritative source of distribution " +
             "config changes in a content cluster, and distribution changes will be part of explicitly " +
             "versioned cluster states.",
