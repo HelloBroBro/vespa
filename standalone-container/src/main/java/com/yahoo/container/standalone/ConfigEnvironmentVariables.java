@@ -16,7 +16,6 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
     @Override
     public Optional<Integer> rpcPort() {
         return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_RPC_PORT"))
-                .or(() -> getRawInstallVariable("services.port_configserver_rpc"))
                 .map(Integer::parseInt);
     }
 
@@ -30,7 +29,6 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
     @Override
     public ConfigServer[] allConfigServers() {
         return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVERS"))
-                .or(() -> getRawInstallVariable("services.addr_configserver"))
                 .map(ConfigEnvironmentVariables::toConfigServers)
                 .orElseGet(() -> new ConfigServer[0]);
     }
@@ -61,13 +59,6 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
     @Override
     public Optional<Long> sessionLifeTimeSecs() {
         return getInstallVariable("session_lifetime", Long::parseLong);
-    }
-
-    @Override
-    public String[] configModelPluginDirs() {
-        return getRawInstallVariable("cloudconfig_server.config_model_plugin_dirs")
-                .map(ConfigEnvironmentVariables::toConfigModelsPluginDir)
-                .orElseGet(() -> new String[0]);
     }
 
     @Override
@@ -158,10 +149,6 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid config server " + configserverString, e);
         }
-    }
-
-    static String[] toConfigModelsPluginDir(String configModelsPluginDirString) {
-        return multiValueParameterStream(configModelsPluginDirString).toArray(String[]::new);
     }
 
     private static Optional<String> getInstallVariable(String name) {
