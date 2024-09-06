@@ -37,7 +37,7 @@
 %global _vespa_gtest_version 1.14.0
 %global _vespa_protobuf_version 5.26.1
 %global _vespa_openblas_version 0.3.27
-%global _vespa_llama_version 3.2.1
+%global _vespa_llama_version 3.3.0
 %global _use_vespa_abseil_cpp 1
 %global _use_vespa_protobuf 1
 %global _use_vespa_openblas 1
@@ -159,7 +159,7 @@ Requires: vespa-xxhash >= 0.8.1
 Requires: xxhash-libs >= 0.8.1
 %endif
 %if 0%{?el8}
-Requires: vespa-openssl >= 3.1.5
+Requires: vespa-openssl >= 3.1.7
 %else
 Requires: openssl-libs
 %endif
@@ -185,7 +185,7 @@ Summary: Vespa - The open big data serving engine - C++ libraries
 Requires: %{name}-base-libs = %{version}-%{release}
 Requires: libicu
 %if 0%{?el8}
-Requires: vespa-openssl >= 3.1.5
+Requires: vespa-openssl >= 3.1.7
 %else
 Requires: openssl-libs
 %endif
