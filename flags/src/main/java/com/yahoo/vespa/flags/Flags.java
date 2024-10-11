@@ -246,14 +246,6 @@ public class Flags {
             "Takes effect on next tick.",
             NODE_TYPE);
 
-    public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
-            "enabled-horizon-dashboard", false,
-            List.of("olaa"), "2021-09-13", "2025-01-01",
-            "Enable Horizon dashboard",
-            "Takes effect immediately",
-            TENANT_ID, CONSOLE_USER_EMAIL
-    );
-
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
             List.of("arnej"), "2021-11-15", "2024-12-31",
@@ -514,7 +506,7 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS = defineLongFlag(
-            "file-download-backoff-initial-time-ms", 2000,
+            "file-download-backoff-initial-time-ms", 1000,
             List.of("hmusum"), "2024-08-16", "2024-11-01",
             "Initial backoff time in milliseconds when failing to download a file reference",
             "Takes effect on restart of Docker container");

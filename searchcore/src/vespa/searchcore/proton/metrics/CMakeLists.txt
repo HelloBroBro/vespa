@@ -8,16 +8,20 @@ vespa_add_library(searchcore_proton_metrics STATIC
     documentdb_tagged_metrics.cpp
     document_db_commit_metrics.cpp
     document_db_feeding_metrics.cpp
+    dummy_wire_service.cpp
     executor_metrics.cpp
     executor_threading_service_metrics.cpp
     executor_threading_service_stats.cpp
     field_metrics.cpp
     field_metrics_entry.cpp
+    index_metrics.cpp
+    index_metrics_entry.cpp
     job_load_sampler.cpp
     job_tracker.cpp
     job_tracked_flush_target.cpp
     job_tracked_flush_task.cpp
     metrics_engine.cpp
+    metricswireservice.cpp
     resource_usage_metrics.cpp
     sessionmanager_metrics.cpp
     trans_log_server_metrics.cpp
