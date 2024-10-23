@@ -30,10 +30,8 @@ void swap(DiskIndex::LookupResult & a, DiskIndex::LookupResult & b)
 }
 
 DiskIndex::LookupResult::LookupResult() noexcept
-    : indexId(0u),
-      wordNum(0),
-      counts(),
-      bitOffset(0)
+    : DictionaryLookupResult(),
+      indexId(0u)
 {
 }
 
@@ -239,29 +237,15 @@ DiskIndex::read(const Key & key, LookupResultVector & result)
 index::PostingListHandle::UP
 DiskIndex::readPostingList(const LookupResult &lookupRes) const
 {
-    PostingListHandle::UP handle(new PostingListHandle());
-    handle->_bitOffset = lookupRes.bitOffset;
-    handle->_bitLength = lookupRes.counts._bitLength;
-    SchemaUtil::IndexIterator it(_schema, lookupRes.indexId);
-    handle->_file = _field_indexes[it.getIndex()].get_posting_file();
-    if (handle->_file == nullptr) {
-        return {};
-    }
-    const uint32_t firstSegment = 0;
-    const uint32_t numSegments = 0; // means all segments
-    handle->_file->readPostingList(lookupRes.counts, firstSegment, numSegments,*handle);
-    return handle;
+    auto& field_index = _field_indexes[lookupRes.indexId];
+    return field_index.read_posting_list(lookupRes);
 }
 
 BitVector::UP
 DiskIndex::readBitVector(const LookupResult &lookupRes) const
 {
-    SchemaUtil::IndexIterator it(_schema, lookupRes.indexId);
-    BitVectorDictionary * dict = _field_indexes[it.getIndex()].get_bit_vector_dictionary();
-    if (dict == nullptr) {
-        return {};
-    }
-    return dict->lookup(lookupRes.wordNum);
+    auto& field_index = _field_indexes[lookupRes.indexId];
+    return field_index.read_bit_vector(lookupRes);
 }
 
 namespace {
@@ -422,7 +406,7 @@ DiskIndex::get_field_length_info(const std::string& field_name) const
 {
     uint32_t fieldId = _schema.getIndexFieldId(field_name);
     if (fieldId != Schema::UNKNOWN_FIELD_ID) {
-        return _field_indexes[fieldId].get_posting_file()->get_field_length_info();
+        return _field_indexes[fieldId].get_field_length_info();
     } else {
         return {};
     }
@@ -434,11 +418,10 @@ DiskIndex::get_stats() const
     SearchableStats stats;
     uint64_t size_on_disk = _nonfield_size_on_disk;
     uint32_t field_id = 0;
-    for (const auto& field_index : _field_indexes) {
-        auto field_index_size_on_disk = field_index.get_size_on_disk();
-        size_on_disk += field_index_size_on_disk;
-        stats.add_field_stats(_schema.getIndexField(field_id).getName(),
-                              FieldIndexStats().size_on_disk(field_index_size_on_disk));
+    for (auto& field_index : _field_indexes) {
+        auto field_stats = field_index.get_stats();
+        size_on_disk += field_stats.size_on_disk();
+        stats.add_field_stats(_schema.getIndexField(field_id).getName(), field_stats);
         ++field_id;
     }
     stats.sizeOnDisk(size_on_disk);
