@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.secret.aws;
 
 import ai.vespa.secret.config.aws.AsmSecretConfig;
@@ -63,7 +64,7 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
     }
 
     // For testing
-    AsmSecretReader(Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier) {
+    public AsmSecretReader(Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier) {
         super(clientAndCredentialsSupplier);
         cache = initCache();
         ztsClientCloser = () -> {};
