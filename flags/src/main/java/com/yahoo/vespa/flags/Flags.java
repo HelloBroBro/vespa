@@ -199,13 +199,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    // TODO: Move to a permanent flag
-    public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
-            "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2025-10-01",
-            "Allowed Athenz proxy identities",
-            "takes effect at redeployment");
-
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
             List.of("vekterli"), "2021-02-19", "2025-02-01",
@@ -317,27 +310,27 @@ public class Flags {
 
     public static final UnboundBooleanFlag SORT_BLUEPRINTS_BY_COST = defineFeatureFlag(
             "sort-blueprints-by-cost", false,
-            List.of("baldersheim"), "2023-12-19", "2024-10-31",
+            List.of("baldersheim"), "2023-12-19", "2025-01-10",
             "If true blueprints are sorted based on cost estimate, rather that absolute estimated hits",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag ALWAYS_MARK_PHRASE_EXPENSIVE = defineFeatureFlag(
             "always-mark-phrase-expensive", false,
-            List.of("baldersheim"), "2023-11-20", "2024-10-31",
+            List.of("baldersheim"), "2023-11-20", "2025-01-10",
             "If true all phrases will be marked expensive, independent of parents",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2024-11-01",
+            List.of("hmusum"), "2023-07-19", "2025-01-10",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2024-11-01",
+            List.of("hmusum"), "2023-07-19", "2025-01-10",
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
@@ -437,7 +430,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag LAUNCH_APPLICATION_ATHENZ_SERVICE = defineFeatureFlag(
             "launch-application-athenz-service", false,
-            List.of("jonmv"), "2024-06-11", "2024-11-01",
+            List.of("jonmv"), "2024-06-11", "2025-01-10",
             "Whether to launch an Athenz service unique to the application. Only valid in public systems!",
             "Takes effect on next deployment",
             INSTANCE_ID);
@@ -490,12 +483,6 @@ public class Flags {
             "Takes effect immediately",
             (value) -> "legacy".equals(value) || "standard".equals(value),
             TENANT_ID, APPLICATION, INSTANCE_ID);
-
-    public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS = defineLongFlag(
-            "file-download-backoff-initial-time-ms", 1000,
-            List.of("hmusum"), "2024-08-16", "2024-11-01",
-            "Initial backoff time in milliseconds when failing to download a file reference",
-            "Takes effect on restart of Docker container");
 
     public static final UnboundBooleanFlag OVERRIDE_S1_TOKEN = defineFeatureFlag(
             "override-s1-token", false,
