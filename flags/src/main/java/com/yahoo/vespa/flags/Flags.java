@@ -421,7 +421,7 @@ public class Flags {
             TENANT_ID);
 
     public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
-            "enforce-strictly-increasing-cluster-state-versions", false,
+            "enforce-strictly-increasing-cluster-state-versions", true,
             List.of("vekterli"), "2024-06-03", "2024-12-01",
             "Iff true, received cluster state versions that are lower than the current active " +
             "state version on the node will be explicitly rejected.",
@@ -468,12 +468,6 @@ public class Flags {
             "hubspot-sync-companies", false,
             List.of("bjorncs"), "2024-07-19", "2025-01-01",
             "Whether to sync companies to HubSpot",
-            "Takes effect immediately");
-
-    public static final UnboundBooleanFlag SDM_ENABLED_PROVISIONING = defineFeatureFlag(
-            "sdm-enabled-provisioning", true,
-            List.of("olaa"), "2024-07-31", "2024-11-01",
-            "Whether to provision with SDM enabled",
             "Takes effect immediately");
 
     public static final UnboundStringFlag HOSTNAME_SCHEME = defineStringFlag(
