@@ -344,7 +344,13 @@ public class PermanentFlags {
 
     public static final UnboundListFlag<String> CLOUD_ACCOUNTS = defineListFlag(
             "cloud-accounts", List.of(), String.class,
-            "A list of 12-digit AWS account IDs that are valid for the given tenant",
+            "A list of cloud accounts (e.g. AWS account or GCP project IDs) that are valid for the given tenant",
+            "Takes effect on next deployment through controller",
+            TENANT_ID);
+
+    public static final UnboundBooleanFlag REQUIRE_ENCLAVE = defineFeatureFlag(
+            "require-enclave", false,
+            "Whether the given tenant should only be allowed to deploy to enclave",
             "Takes effect on next deployment through controller",
             TENANT_ID);
 
@@ -366,6 +372,12 @@ public class PermanentFlags {
             "Allow user filter (chains) in application",
             "Takes effect on next redeployment",
             INSTANCE_ID);
+
+    public static final UnboundBooleanFlag ALLOW_STATUS_PAGE = defineFeatureFlag(
+            "allow-status-page", false,
+            "Shows link to status page for nodes of a specific tenant",
+            "Takes effect on browser reload of /user/v1/user",
+            CONSOLE_USER_EMAIL, TENANT_ID);
 
     public static final UnboundIntFlag PRE_PROVISIONED_LB_COUNT = defineIntFlag(
             "pre-provisioned-lb-count", 0,
