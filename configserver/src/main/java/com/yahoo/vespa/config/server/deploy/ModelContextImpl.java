@@ -18,6 +18,7 @@ import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
@@ -209,6 +210,7 @@ public class ModelContextImpl implements ModelContext {
         private final SharedHosts sharedHosts;
         private final Architecture adminClusterArchitecture;
         private final double logserverNodeMemory;
+        private final double clusterControllerNodeMemory;
         private final boolean symmetricPutAndActivateReplicaSelection;
         private final boolean enforceStrictlyIncreasingClusterStateVersions;
         private final boolean launchApplicationAthenzService;
@@ -262,6 +264,7 @@ public class ModelContextImpl implements ModelContext {
             this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(source).with(appId).with(version).value();
             this.adminClusterArchitecture = Architecture.valueOf(PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(source).with(appId).with(version).value());
             this.logserverNodeMemory = PermanentFlags.LOGSERVER_NODE_MEMORY.bindTo(source).with(appId).with(version).value();
+            this.clusterControllerNodeMemory = PermanentFlags.CLUSTER_CONTROLLER_NODE_MEMORY.bindTo(source).with(appId).with(version).value();
             this.symmetricPutAndActivateReplicaSelection = Flags.SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION.bindTo(source).with(appId).with(version).value();
             this.enforceStrictlyIncreasingClusterStateVersions = Flags.ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS.bindTo(source).with(appId).with(version).value();
             this.launchApplicationAthenzService = Flags.LAUNCH_APPLICATION_ATHENZ_SERVICE.bindTo(source).with(appId).with(version).value();
@@ -321,6 +324,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public SharedHosts sharedHosts() { return sharedHosts; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
         @Override public double logserverNodeMemory() { return logserverNodeMemory; }
+        @Override public double clusterControllerNodeMemory() { return clusterControllerNodeMemory; }
         @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
         @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
         @Override public boolean distributionConfigFromClusterController() { return distributionConfigFromClusterController; }
@@ -347,6 +351,7 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final Optional<AthenzDomain> athenzDomain;
         private final Quota quota;
+        private final List<TenantVault> tenantVaults;
         private final List<TenantSecretStore> tenantSecretStores;
         private final SecretStore secretStore;
         private final StringFlag jvmGCOptionsFlag;
@@ -373,6 +378,7 @@ public class ModelContextImpl implements ModelContext {
                           Optional<EndpointCertificateSecrets> endpointCertificateSecrets,
                           Optional<AthenzDomain> athenzDomain,
                           Optional<Quota> maybeQuota,
+                          List<TenantVault> tenantVaults,
                           List<TenantSecretStore> tenantSecretStores,
                           SecretStore secretStore,
                           List<X509Certificate> operatorCertificates,
@@ -394,6 +400,7 @@ public class ModelContextImpl implements ModelContext {
             this.endpointCertificateSecrets = endpointCertificateSecrets;
             this.athenzDomain = athenzDomain;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
+            this.tenantVaults = tenantVaults;
             this.tenantSecretStores = tenantSecretStores;
             this.secretStore = secretStore;
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
@@ -465,6 +472,11 @@ public class ModelContextImpl implements ModelContext {
         public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
 
         @Override public Quota quota() { return quota; }
+
+        @Override
+        public List<TenantVault> tenantVaults() {
+            return tenantVaults;
+        }
 
         @Override
         public List<TenantSecretStore> tenantSecretStores() {

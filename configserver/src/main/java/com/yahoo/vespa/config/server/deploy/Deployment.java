@@ -129,7 +129,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             TimeoutBudget timeoutBudget = params.get().getTimeoutBudget();
             timeoutBudget.assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
-            Activation activation = applicationRepository.activate(session, applicationId, tenant, params.get().force());
+            Activation activation = applicationRepository.activate(session, applicationId, tenant, params.get().isBootstrap(), params.get().force());
             waitForActivation(applicationId, timeoutBudget, activation);
             restartServicesIfNeeded(applicationId);
             storeReindexing(applicationId);
@@ -255,6 +255,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     .isInternalRedeployment(isInternalRedeployment)
                     .force(force)
                     .waitForResourcesInPrepare(waitForResourcesInPrepare)
+                    .tenantVaults(session.getTenantVaults())
                     .tenantSecretStores(session.getTenantSecretStores())
                     .dataplaneTokens(session.getDataplaneTokens());
             session.getDockerImageRepository().ifPresent(params::dockerImageRepository);
@@ -269,7 +270,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         if (!params.waitForResourcesInPrepare() || provisioner.isEmpty()) return;
 
         Set<HostSpec> preparedHosts = session.getAllocatedHosts().getHosts();
-        ActivationContext context = new ActivationContext(session.getSessionId());
+        ActivationContext context = new ActivationContext(session.getSessionId(), params.isBootstrap());
         AtomicReference<Exception> lastException = new AtomicReference<>();
 
         while (true) {

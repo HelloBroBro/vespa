@@ -118,6 +118,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"bratseth"}) default SharedHosts sharedHosts() { return SharedHosts.empty(); }
         @ModelFeatureFlag(owners = {"bratseth"}) default Architecture adminClusterArchitecture() { return Architecture.x86_64; }
         @ModelFeatureFlag(owners = {"arnej"}) default double logserverNodeMemory() { return 0.0; }
+        @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean symmetricPutAndActivateReplicaSelection() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean enforceStrictlyIncreasingClusterStateVersions() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean distributionConfigFromClusterController() { return false; }
@@ -148,6 +149,8 @@ public interface ModelContext {
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
 
         default Quota quota() { return Quota.unlimited(); }
+
+        default List<TenantVault> tenantVaults() { return List.of(); }
 
         default List<TenantSecretStore> tenantSecretStores() { return List.of(); }
 
