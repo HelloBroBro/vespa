@@ -3,6 +3,7 @@ package ai.vespa.secret.aws;
 import ai.vespa.secret.aws.testutil.AsmSecretReaderTester;
 import ai.vespa.secret.aws.testutil.AsmSecretTesterBase.SecretVersion;
 import ai.vespa.secret.config.aws.AsmTenantSecretConfig;
+import ai.vespa.secret.model.ExternalId;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.Secret;
 import ai.vespa.secret.model.SecretName;
@@ -44,8 +45,8 @@ public class AsmTenantSecretReaderTest {
 
     AsmTenantSecretReader secretReader() {
         return new AsmTenantSecretReader(tester::newClient, system, tenant,
-                                         Map.of(VaultName.of("vault1"), VaultId.of("vaultId1"),
-                                                VaultName.of("vault2"), VaultId.of("vaultId2")));
+                                         Map.of(VaultName.of("vault1"), new AsmTenantSecretReader.Vault(VaultId.of("vaultId1"), VaultName.of("vault1"), ExternalId.of("ext1")),
+                                                VaultName.of("vault2"), new AsmTenantSecretReader.Vault(VaultId.of("vaultId2"), VaultName.of("vault2"), ExternalId.of("ext2"))));
     }
 
     @Test
@@ -113,10 +114,10 @@ public class AsmTenantSecretReaderTest {
         var key = new Key(vault, SecretName.of("secret1"));
         try (var reader = secretReader()) {
             var e = assertThrows(IllegalArgumentException.class, () -> reader.getSecret(key));
-            assertEquals("Failed to retrieve current version of secret with key vault1/secret1", e.getMessage());
+            assertTrue(e.getMessage().startsWith("Failed to retrieve current version of secret with key vault1/secret1"));
 
             e = assertThrows(IllegalArgumentException.class, () -> reader.getSecret(key, SecretVersionId.of("1")));
-            assertEquals("Failed to retrieve secret with key vault1/secret1, version: 1", e.getMessage());
+            assertTrue(e.getMessage().startsWith("Failed to retrieve secret with key vault1/secret1, version: 1"));
         }
     }
 
@@ -130,7 +131,7 @@ public class AsmTenantSecretReaderTest {
 
         try (var store = secretReader()) {
             var e = assertThrows(IllegalArgumentException.class, () -> store.getSecret(key, SecretVersionId.of("2")));
-            assertEquals("Failed to retrieve secret with key vault1/secret1, version: 2", e.getMessage());
+            assertTrue(e.getMessage().startsWith("Failed to retrieve secret with key vault1/secret1, version: 2"));
         }
 
     }
@@ -172,10 +173,15 @@ public class AsmTenantSecretReaderTest {
                 .vaults(builder -> builder.name("vault1").id("id1").externalId("ext1"))
                 .vaults(builder -> builder.name("vault2").id("id2").externalId("ext2"));
 
-        Map<VaultName, VaultId> idMap = AsmTenantSecretReader.createVaultIdMap(config.build());
+        Map<VaultName, AsmTenantSecretReader.Vault> idMap = AsmTenantSecretReader.createVaultIdMap(config.build());
         assertEquals(2, idMap.size());
-        assertEquals(VaultId.of("id1"), idMap.get(VaultName.of("vault1")));
-        assertEquals(VaultId.of("id2"), idMap.get(VaultName.of("vault2")));
+        var vault1 = idMap.get(VaultName.of("vault1"));
+        assertEquals(VaultId.of("id1"), vault1.vaultId());
+        assertEquals(ExternalId.of("ext1"), vault1.externalId());
+
+        var vault2 = idMap.get(VaultName.of("vault2"));
+        assertEquals(VaultId.of("id2"), vault2.vaultId());
+        assertEquals(ExternalId.of("ext2"), vault2.externalId());
     }
 
     private void assertSame(SecretVersion version, Secret secret) {
